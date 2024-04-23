@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_AST_STOP_NODE_H__
-#define __SIMPLE_AST_STOP_NODE_H__
+#ifndef __SIMPLE_AST_BLOCK_NODE_H__
+#define __SIMPLE_AST_BLOCK_NODE_H__
 
 #include <cdk/ast/expression_node.h>
 
