@@ -231,16 +231,18 @@ void til::postfix_writer::do_print_node(til::print_node * const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void til::postfix_writer::do_read_node(til::read_node * const node, int lvl) {
-  ASSERT_SAFE_EXPRESSIONS;
+  //TODO: not needed for this delivery.
+  /*
+    ASSERT_SAFE_EXPRESSIONS;
   _pf.CALL("readi");
   _pf.LDFVAL32();
-  node->argument()->accept(this, lvl);
   _pf.STINT();
+  */
 }
 
 //---------------------------------------------------------------------------
 
-void til::postfix_writer::do_while_node(til::while_node * const node, int lvl) {
+void til::postfix_writer::do_loop_node(til::loop_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   int lbl1, lbl2;
   _pf.LABEL(mklbl(lbl1 = ++_lbl));
@@ -274,4 +276,41 @@ void til::postfix_writer::do_if_else_node(til::if_else_node * const node, int lv
   _pf.LABEL(mklbl(lbl1));
   node->elseblock()->accept(this, lvl + 2);
   _pf.LABEL(mklbl(lbl1 = lbl2));
+}
+
+//---------------------------------------------------------------------------
+void til::postfix_writer::do_block_node(til::block_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_return_node(til::return_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_stop_node(til::stop_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_next_node(til::next_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_index_node(til::index_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_address_of_node(til::address_of_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_nullptr_node(til::nullptr_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_sizeof_node(til::sizeof_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_var_declaration_node(til::var_declaration_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_function_node(til::function_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_call_node(til::call_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_alloc_node(til::alloc_node * const node, int lvl) {
 }
