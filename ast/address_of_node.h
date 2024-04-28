@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_AST_ADDRESSOF_NODE_H__
-#define __SIMPLE_AST_ADDRESSOF_NODE_H__
+#ifndef __TIL_AST_ADDRESSOF_NODE_H__
+#define __TIL_AST_ADDRESSOF_NODE_H__
 
 #include <cdk/ast/expression_node.h>
 #include <cdk/ast/lvalue_node.h>

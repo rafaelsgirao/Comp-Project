@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_AST_SIZEOF_NODE_H__
-#define __SIMPLE_AST_SIZEOF_NODE_H__
+#ifndef __TIL_AST_SIZEOF_NODE_H__
+#define __TIL_AST_SIZEOF_NODE_H__
 
 #include <cdk/ast/unary_operation_node.h>
 
