@@ -231,11 +231,13 @@ void til::postfix_writer::do_print_node(til::print_node * const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void til::postfix_writer::do_read_node(til::read_node * const node, int lvl) {
-  ASSERT_SAFE_EXPRESSIONS;
+  //TODO: not needed for this delivery.
+  /*
+    ASSERT_SAFE_EXPRESSIONS;
   _pf.CALL("readi");
   _pf.LDFVAL32();
-  node->argument()->accept(this, lvl);
   _pf.STINT();
+  */
 }
 
 //---------------------------------------------------------------------------
