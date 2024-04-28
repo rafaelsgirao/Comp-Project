@@ -13,7 +13,7 @@ namespace til {
 
   public:
     stop_node(int lineno, int nth_cycle) :
-        cdk::sto(lineno), _nth_cycle(nth_cycle) {
+        cdk::basic_node(lineno), _nth_cycle(nth_cycle) {
           //empty
     }
 

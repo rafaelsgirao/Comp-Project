@@ -14,16 +14,10 @@ namespace til {
     cdk::expression_node *_init;
 
   public:
-    var_declaration_node(int lineno, int qualifier, std::string &name, cdk::expression_node *init, std::shared_ptr<cdk::basic_type> v_type) : 
+    var_declaration_node(int lineno, int qualifier, std::string &name, cdk::expression_node *init = nullptr, std::shared_ptr<cdk::basic_type> v_type = nullptr) : 
         cdk::typed_node(lineno), _qualifier(qualifier) ,_name(name), _init(init) {
           type(v_type);  
     }
-
-    var_declaration_node(int lineno, int qualifier, std::string &name, std::shared_ptr<cdk::basic_type> v_type) : 
-        cdk::typed_node(lineno), _qualifier(qualifier) ,_name(name), _init(nullptr)  {
-          type(v_type);
-    }
-
 
     void accept(basic_ast_visitor *sp, int level) { sp->do_var_declaration_node(this, level); }
 

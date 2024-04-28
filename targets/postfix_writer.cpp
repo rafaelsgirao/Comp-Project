@@ -303,3 +303,12 @@ void til::postfix_writer::do_sizeof_node(til::sizeof_node * const node, int lvl)
 
 void til::postfix_writer::do_var_declaration_node(til::var_declaration_node * const node, int lvl) {
 }
+
+void til::postfix_writer::do_function_node(til::function_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_call_node(til::call_node * const node, int lvl) {
+}
+
+void til::postfix_writer::do_alloc_node(til::alloc_node * const node, int lvl) {
+}

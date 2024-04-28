@@ -222,3 +222,12 @@ void til::type_checker::do_sizeof_node(til::sizeof_node * const node, int lvl) {
 
 void til::type_checker::do_var_declaration_node(til::var_declaration_node * const node, int lvl) {
 }
+
+void til::type_checker::do_function_node(til::function_node * const node, int lvl) {
+}
+
+void til::type_checker::do_call_node(til::call_node * const node, int lvl) {
+}
+
+void til::type_checker::do_alloc_node(til::alloc_node * const node, int lvl) {
+}
