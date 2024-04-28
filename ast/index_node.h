@@ -8,7 +8,7 @@ namespace til {
   /**
    * Class for describing sizeof nodes.
    */
-  class sizeof_node : public cdk::lvalue_node {
+  class index_node : public cdk::lvalue_node {
     cdk::expression_node *_base;
 		cdk::expression_node *_ind;
 

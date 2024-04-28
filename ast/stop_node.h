@@ -9,15 +9,15 @@ namespace til {
    * Class for describing if-then nodes.
    */
   class stop_node : public cdk::basic_node {
-    cdk::integer_node _nth_cycle;
+    int _nth_cycle;
 
   public:
-    stop_node(int lineno, cdk::integer_node nth_cycle) :
+    stop_node(int lineno, int nth_cycle) :
         cdk::basic_node(lineno), _nth_cycle(nth_cycle) {
           //empty
     }
 
-    stop_node(int lineno): cdk::basic_node(lineno), _nth_cycle(new cdk::integer_node(lineno, 1)) {
+    stop_node(int lineno): cdk::basic_node(lineno), _nth_cycle(1) {
       //empty
     }
 

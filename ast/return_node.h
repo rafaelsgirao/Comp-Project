@@ -9,7 +9,7 @@ namespace til {
    * Class for describing if-then nodes.
    */
   class return_node : public cdk::basic_node {
-    cdk::expression_node *
+    cdk::expression_node * _returnval;
 
   public:
     return_node(int lineno, cdk::expression_node *returnval) :

@@ -196,29 +196,29 @@ void til::type_checker::do_if_else_node(til::if_else_node *const node, int lvl) 
 }
 
 //---------------------------------------------------------------------------
-void til::postfix_writer::do_block_node(til::block_node * const node, int lvl) {
+void til::type_checker::do_block_node(til::block_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_return_node(til::return_node * const node, int lvl) {
+void til::type_checker::do_return_node(til::return_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_stop_node(til::stop_node * const node, int lvl) {
+void til::type_checker::do_stop_node(til::stop_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_next_node(til::next_node * const node, int lvl) {
+void til::type_checker::do_next_node(til::next_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_index_node(til::index_node * const node, int lvl) {
+void til::type_checker::do_index_node(til::index_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_address_of_node(til::address_of_node * const node, int lvl) {
+void til::type_checker::do_address_of_node(til::address_of_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_nullptr_node(til::nullptr_node * const node, int lvl) {
+void til::type_checker::do_nullptr_node(til::nullptr_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_sizeof_node(til::sizeof_node * const node, int lvl) {
+void til::type_checker::do_sizeof_node(til::sizeof_node * const node, int lvl) {
 }
 
-void til::postfix_writer::do_var_declaration_node(til::var_declaration_node * const node, int lvl) {
+void til::type_checker::do_var_declaration_node(til::var_declaration_node * const node, int lvl) {
 }
