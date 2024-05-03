@@ -11,11 +11,17 @@
 // don't change this
 #define yyerror LexerError
 %}
-%x X_STRING
+%x X_STRING X_COMMENT
 %%
   yydebug=1; set_debug(1);
 
-"--".*                 ; /* ignore comments */
+ /* Comments.*/
+";".*                 ; /* ignore single-line comments. */
+"/*"                   yy_push_state(X_COMMENT)
+"/*"                   yy_push_state(X_COMMENT);
+<X_COMMENT>"/*"        yy_push_state(X_COMMENT);
+<X_COMMENT>"*/"        yy_pop_state();
+<X_COMMENT>.|\n        ; 
 
 ">="                   return tGE; 
 "<="                   return tLE; 
