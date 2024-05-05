@@ -17,7 +17,7 @@
 
  /* Comments.*/
 ";".*                 ; /* ignore single-line comments. */
-"/*"                   yy_push_state(X_COMMENT)
+"/*"                   yy_push_state(X_COMMENT);
 "/*"                   yy_push_state(X_COMMENT);
 <X_COMMENT>"/*"        yy_push_state(X_COMMENT);
 <X_COMMENT>"*/"        yy_pop_state();
