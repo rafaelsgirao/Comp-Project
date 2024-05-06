@@ -40,7 +40,6 @@ bool convert_to_double(double &val, const std::string &s) {
  /* Comments.*/
 ";".*                 ; /* ignore single-line comments. */
 "/*"                   yy_push_state(X_COMMENT);
-"/*"                   yy_push_state(X_COMMENT);
 <X_COMMENT>"/*"        yy_push_state(X_COMMENT);
 <X_COMMENT>"*/"        yy_pop_state();
 <X_COMMENT>.|\n        ; 
@@ -93,7 +92,7 @@ bool convert_to_double(double &val, const std::string &s) {
 
 
 ([1-9][0-9]*)|0                  if (!convert_to_integer(yylval.i ,yytext, 10)) yyerror("Value out of range"); return tINTEGER;
-0x[0-9a-fA-F]+                   if (convert_to_integer(yylval.i ,yytext, 16)) yyerror("Value out of range"); return tINTEGER;
+0x[0-9a-fA-F]+                   if (!convert_to_integer(yylval.i ,yytext, 16)) yyerror("Value out of range"); return tINTEGER;
 
 [0-9]+.[0-9]+([eE][-]?[0-9]+)?   if (!convert_to_double(yylval.d, yytext)) yyerror("Value out of range"); return tDOUBLE;
 [0-9]+[eE][-]?[0-9]+             if (!convert_to_double(yylval.d, yytext)) yyerror("Value out of range"); return tDOUBLE;
