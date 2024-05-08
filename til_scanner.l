@@ -63,7 +63,6 @@ bool convert_to_double(double &val, const std::string &s) {
 
 "block"                return tBLOCK;
 "if"                   return tIF; 
-"else"                 return tELSE;
 "loop"                 return tWHILE; 
 "stop"                 return tSTOP;
 "next"                 return tNEXT;
