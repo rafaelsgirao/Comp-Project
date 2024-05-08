@@ -17,6 +17,10 @@ namespace til {
           //empty
     }
 
+    int nth_cycle() {
+      return _nth_cycle;
+    }
+
     stop_node(int lineno): cdk::basic_node(lineno), _nth_cycle(1) {
       //empty
     }

@@ -11,19 +11,6 @@ void til::xml_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
 void til::xml_writer::do_data_node(cdk::data_node * const node, int lvl) {
   // EMPTY
 }
-void til::xml_writer::do_double_node(cdk::double_node * const node, int lvl) {
-  // EMPTY
-}
-void til::xml_writer::do_not_node(cdk::not_node * const node, int lvl) {
-  // EMPTY
-}
-void til::xml_writer::do_and_node(cdk::and_node * const node, int lvl) {
-  // EMPTY
-}
-void til::xml_writer::do_or_node(cdk::or_node * const node, int lvl) {
-  // EMPTY
-}
-
 //---------------------------------------------------------------------------
 
 void til::xml_writer::do_sequence_node(cdk::sequence_node * const node, int lvl) {
@@ -40,6 +27,10 @@ void til::xml_writer::do_integer_node(cdk::integer_node * const node, int lvl) {
 }
 
 void til::xml_writer::do_string_node(cdk::string_node * const node, int lvl) {
+  process_literal(node, lvl);
+}
+
+void til::xml_writer::do_double_node(cdk::double_node * const node, int lvl) {
   process_literal(node, lvl);
 }
 
@@ -102,6 +93,15 @@ void til::xml_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
 }
 void til::xml_writer::do_eq_node(cdk::eq_node * const node, int lvl) {
   do_binary_operation(node, lvl);
+}
+void til::xml_writer::do_and_node(cdk::and_node * const node, int lvl) {
+  do_binary_operation(node, lvl);
+}
+void til::xml_writer::do_or_node(cdk::or_node * const node, int lvl) {
+  do_binary_operation(node, lvl);
+}
+void til::xml_writer::do_not_node(cdk::not_node * const node, int lvl) {
+  do_unary_operation(node, lvl);
 }
 
 //---------------------------------------------------------------------------
@@ -213,9 +213,24 @@ void til::xml_writer::do_block_node(til::block_node * const node, int lvl) {
 }
 
 void til::xml_writer::do_return_node(til::return_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+  openTag(node, lvl);
+  openTag("value", lvl + 2);
+  if (node->returnval() != nullptr) {
+    node->returnval()->accept(this, lvl + 4);
+  }
+  closeTag("value", lvl + 2);
+  closeTag(node, lvl);
 }
 
 void til::xml_writer::do_stop_node(til::stop_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+  openTag(node, lvl);
+  openTag("value", lvl + 2);
+  //? Does this make sense? Should print the integer value
+  os() << std::string(lvl + 4, ' ') << node->nth_cycle() << std::endl;
+  closeTag("value", lvl + 2);
+  closeTag(node, lvl);
 }
 
 void til::xml_writer::do_next_node(til::next_node * const node, int lvl) {
