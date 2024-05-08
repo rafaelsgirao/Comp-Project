@@ -10,14 +10,14 @@ namespace til {
    * Class for describing program nodes.
    */
   class program_node : public cdk::basic_node {
-    cdk::block_node *_block;
+    til::block_node *_block;
 
   public:
-    program_node(int lineno, cdk::block_node *block) :
+    program_node(int lineno, til::block_node *block) :
         cdk::basic_node(lineno), _block(block) {
     }
 
-    cdk::basic_node *_block() { return _block; }
+    til::block_node *block() { return _block; }
 
     void accept(basic_ast_visitor *sp, int level) { sp->do_program_node(this, level); }
 
