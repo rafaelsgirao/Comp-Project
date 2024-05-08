@@ -63,8 +63,8 @@ list : stmt      { $$ = new cdk::sequence_node(LINE, $1); }
      ;
 
 stmt : expr ';'                         { $$ = new til::evaluation_node(LINE, $1); }
-     | tPRINT expr ';'                  { $$ = new til::print_node(LINE, $2, false); }
-     | tPRINTLN expr ';'                { $$ = new til::print_node(LINE, $2, true); }
+     | tPRINT list ';'                  { $$ = new til::print_node(LINE, $2, false); } //! Likely to be wrong
+     | tPRINTLN list ';'                { $$ = new til::print_node(LINE, $2, true); } //! Likely to be wrong
      | tREAD ';'                        { $$ = new til::read_node(LINE); }
      | tWHILE '(' expr ')' stmt         { $$ = new til::loop_node(LINE, $3, $5); }
      | tIF '(' expr ')' stmt %prec tIFX { $$ = new til::if_node(LINE, $3, $5); }

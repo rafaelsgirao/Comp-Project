@@ -9,7 +9,6 @@ namespace til {
    * Class for describing sizeof nodes.
    */
   class sizeof_node : public cdk::unary_operation_node {
-    cdk::expression_node *_expression;
 
   public:
     sizeof_node(int lineno, cdk::expression_node *expression) :
