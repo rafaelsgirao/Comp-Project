@@ -89,7 +89,6 @@ bool convert_to_double(double &val, const std::string &s) {
 <X_STRING>\\0          yyerror("null character in string");       
 <X_STRING>\n           yyerror("newline in string");
 
-
 ([1-9][0-9]*)|0                  if (!convert_to_integer(yylval.i ,yytext, 10)) yyerror("Value out of range"); return tINTEGER;
 0x[0-9a-fA-F]+                   if (!convert_to_integer(yylval.i ,yytext, 16)) yyerror("Value out of range"); return tINTEGER;
 
