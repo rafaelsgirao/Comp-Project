@@ -27,6 +27,7 @@
   int                   i;          /* integer value */
   double                d;          /* double value */
   std::string          *s;          /* symbol name or string literal */
+  std::vector<std::shared_ptr<cdk::basic_type>> *t;
   cdk::basic_node      *node;       /* node pointer */
   cdk::sequence_node   *sequence;
   cdk::expression_node *expression; /* expression nodes */
@@ -62,12 +63,13 @@
 %nonassoc tUNARY
 
 %type <node> program declaration instruction
-%type <sequence> exprs types instructions declarations
+%type <sequence> exprs instructions declarations
 %type <expression> expr
 %type <type> type non_void_type function_type
 %type <lvalue> lval
 %type <block> declarations_instructions block
 %type <i> qualifier
+%type <t> types
 
 %{
 //-- The rules below will be included in yyparse, the main parsing function.
@@ -91,21 +93,22 @@ non_void_type : tINT    { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT); }
               | tDOUB   { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE); }
               | tSTR    { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING); }
               | type '!' { $$ = cdk::reference_type::create(4, $1); }
-          /*? | function_type { $$ = $1; }*/
+              | function_type { $$ = $1; }
               ;
 
 /* This is a tricky one. Create function is defined as follows:
 create (const std::vector< std::shared_ptr< basic_type > > &input_types, const std::shared_ptr< basic_type > &output_type)
 
 Therefore, the function types must be converted to a vector of types.
-
-function_type  : '(' type ')' { $$ = cdk::functional_type::create($2); }
-               | '(' type '(' types ')' ')' { $$ = cdk::functional_type::create($4, $2); }
-               ;
 */
 
-types : type { $$ = new cdk::sequence_node(LINE, $1); }
-      | type types { $$ = new cdk::sequence_node(LINE, $1, $2); }
+function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $2); }
+               | '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
+               ;
+
+
+types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->push_back($1);}
+      | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
       ;
 
 block : '(' tBLOCK declarations_instructions')' { $$ = $3; }
@@ -133,7 +136,7 @@ instructions: instruction instructions  { $$ = new cdk::sequence_node(LINE, $1, 
             | instruction               { $$ = new cdk::sequence_node(LINE, $1); }
             ;
 
-instruction : expr                                     {$$ = new til::evaluation_node(LINE, $2); }
+instruction : expr                                     {$$ = new til::evaluation_node(LINE, $1); }
             | '(' tPRINT exprs ')'                     {$$ = new til::print_node(LINE, $3, false); }
             | '(' tPRINTLN exprs ')'                   {$$ = new til::print_node(LINE, $3, true); }
             | '(' tSTOP tINTEGER ')'                   {$$ = new til::stop_node(LINE, $3); }
