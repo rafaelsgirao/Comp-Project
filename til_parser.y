@@ -127,12 +127,13 @@ declaration  : type tIDENTIFIER { $$ = new til::var_declaration_node(LINE, tPRIV
              | type tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$2, $3, $1); }
              | tVAR tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$2 , $3, nullptr); }
              | qualifier tVAR tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, $1 , *$3, $4, nullptr); }
+             ;
 
 instructions: instruction instructions  { $$ = new cdk::sequence_node(LINE, $1, $2); }
             | instruction               { $$ = new cdk::sequence_node(LINE, $1); }
             ;
 
-instruction : '(' expr ')'                             {$$ = new til::evaluation_node(LINE, $2); }
+instruction : expr                                     {$$ = new til::evaluation_node(LINE, $2); }
             | '(' tPRINT exprs ')'                     {$$ = new til::print_node(LINE, $3, false); }
             | '(' tPRINTLN exprs ')'                   {$$ = new til::print_node(LINE, $3, true); }
             | '(' tSTOP tINTEGER ')'                   {$$ = new til::stop_node(LINE, $3); }
