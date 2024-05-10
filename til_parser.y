@@ -76,6 +76,11 @@
 %}
 %%
 
+file : declarations_instructions            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
+     | declarations_instructions program    { compiler->ast(new cdk::sequence_node(LINE, $1, $2); } 
+     |                           program    { compiler->ast(new cdk::sequence_node(LINE, $1)); }
+     |            /* empty. */              { compiler->ast(new cdk::sequence_node(LINE)); }
+     ; 
 
 program : '(' tPROGRAM declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $3)); }
         ;
