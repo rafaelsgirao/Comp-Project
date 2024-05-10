@@ -76,7 +76,8 @@
 %}
 %%
 
-program : '(' declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $2)); }
+
+program : '(' tPROGRAM declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $3)); }
         ;
 
 declarations_instructions: declarations instructions   { $$ = new til::block_node(LINE, $1, $2); }
