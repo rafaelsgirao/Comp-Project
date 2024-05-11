@@ -24,6 +24,15 @@ namespace til {
 
         this->type(cdk::functional_type::create(inputs, return_type));
     }
+
+    cdk::sequence_node *args() {
+      return _args;
+    }
+
+    til::block_node *block() {
+      return _block;
+    }
+
     void accept(basic_ast_visitor *sp, int level) { sp->do_function_node(this, level); }
   };
 

@@ -24,6 +24,18 @@ namespace til {
           type(v_type);  
     }
 
+    int qualifier() {
+      return _qualifier;
+    }
+
+    std::string &name() {
+      return _name;
+    }
+
+    cdk::expression_node *init() {
+      return _init;
+    }
+
     void accept(basic_ast_visitor *sp, int level) { sp->do_var_declaration_node(this, level); }
 
   };
