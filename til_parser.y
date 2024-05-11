@@ -77,7 +77,7 @@
 %%
 
 file : declarations_instructions            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
-     | declarations_instructions program    { compiler->ast(new cdk::sequence_node(LINE, $1, $2); } 
+     | declarations_instructions program    { compiler->ast(new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2))); } /* TODO: FIXME! */
      |                           program    { compiler->ast(new cdk::sequence_node(LINE, $1)); }
      |            /* empty. */              { compiler->ast(new cdk::sequence_node(LINE)); }
      ; 
@@ -181,11 +181,11 @@ expr : tINTEGER              { $$ = new cdk::integer_node(LINE, $1); }
      | expr tOR expr         { $$ = new cdk::or_node(LINE, $1, $3); }
      | '(' expr ')'          { $$ = $2; }
      | lval                  { $$ = new cdk::rvalue_node(LINE, $1); }
-     | tSET lval expr        { $$ = new cdk::assignment_node(LINE, $1, $3); }
+     | tSET lval expr        { $$ = new cdk::assignment_node(LINE, $2, $3); }
      | tREAD                 { $$ = new til::read_node(LINE); }
      | tSIZEOF '(' expr ')'  { $$ = new til::sizeof_node(LINE, $3); }
      | tOBJECTS '(' expr ')' { $$ = new til::alloc_node(LINE, $3); }
-     | function              { $$ = $1; }
+    /* | function              { $$ = $1; } */
      ;
 
 lval : tIDENTIFIER          { $$ = new cdk::variable_node(LINE, $1); }
