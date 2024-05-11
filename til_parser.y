@@ -56,10 +56,10 @@
 
 %nonassoc tIFX
 
-%right '='
-%left tGE tLE tEQ tNE '>' '<'
+%right '=' '!'
+%left tGE tLE tEQ tNE '>' '<' tAND tOR
 %left '+' '-'
-%left '*' '/' '%'
+%left '*' '/' '%' 
 %nonassoc tUNARY
 
 %type <node> program declaration instruction
@@ -76,11 +76,23 @@
 %}
 %%
 
-file : declarations_instructions            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
-     | declarations_instructions program    { compiler->ast(new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2))); } /* TODO: FIXME! */
-     |                           program    { compiler->ast(new cdk::sequence_node(LINE, $1)); }
-     |            /* empty. */              { compiler->ast(new cdk::sequence_node(LINE)); }
+file : declarations            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
+     | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2))); } /* TODO: FIXME! */
+     | program                 { compiler->ast(new cdk::sequence_node(LINE, $1)); }
      ; 
+
+declarations : declarations declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
+             | declaration { $$ = new cdk::sequence_node(LINE, $1); }
+             ;
+
+/*? Maybe needs * in identifiers $$ */
+declaration  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
+             | '(' qualifier type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
+             | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); }
+             | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
+             | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
+             | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); }
+             ;
 
 program : '(' tPROGRAM declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $3)); }
         ;
@@ -117,7 +129,7 @@ types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->pus
       | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
       ;
 
-block : '(' tBLOCK declarations_instructions')' { $$ = $3; }
+block : '(' tBLOCK declarations_instructions ')' { $$ = $3; }
       ;
 
 qualifier : tPUBLIC      { $$ = tPUBLIC; }
@@ -125,20 +137,7 @@ qualifier : tPUBLIC      { $$ = tPUBLIC; }
           | tFORWARD     { $$ = tFORWARD; }
           ;
 
-declarations : declaration declarations { $$ = new cdk::sequence_node(LINE, $1, $2); }
-             | declaration { $$ = new cdk::sequence_node(LINE, $1); }
-             ;
-
-/*? Maybe needs * in identifiers $$ */
-declaration  : type tIDENTIFIER { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$2, nullptr, $1); }
-             | qualifier type tIDENTIFIER { $$ = new til::var_declaration_node(LINE, $1, *$3, nullptr ,$2); }
-             | qualifier type tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, $1, *$3, $4 ,nullptr); }
-             | type tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$2, $3, $1); }
-             | tVAR tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$2 , $3, nullptr); }
-             | qualifier tVAR tIDENTIFIER expr { $$ = new til::var_declaration_node(LINE, $1 , *$3, $4, nullptr); }
-             ;
-
-instructions: instruction instructions  { $$ = new cdk::sequence_node(LINE, $1, $2); }
+instructions: instructions instruction  { $$ = new cdk::sequence_node(LINE, $2, $1); }
             | instruction               { $$ = new cdk::sequence_node(LINE, $1); }
             ;
 
@@ -155,41 +154,41 @@ instruction : expr                                     {$$ = new til::evaluation
             | '(' tIF expr instruction instruction ')' {$$ = new til::if_else_node(LINE, $3, $4, $5); }
             | '(' tWHILE expr instruction ')'          {$$ = new til::loop_node(LINE, $3, $4); }
             | block                                    {$$ = $1; }
+            ;
 
 exprs : expr                      { $$ = new cdk::sequence_node(LINE, $1); }
       | exprs expr                { $$ = new cdk::sequence_node(LINE, $2, $1); }
       ;
 
-expr : tINTEGER              { $$ = new cdk::integer_node(LINE, $1); }
-     | tSTRING               { $$ = new cdk::string_node(LINE, $1); }
-     | tDOUBLE               { $$ = new cdk::double_node(LINE, $1); }
-     | tNULL                 { $$ = new til::nullptr_node(LINE); }
-     | '-' expr %prec tUNARY { $$ = new cdk::unary_minus_node(LINE, $2); }
-     | '+' expr %prec tUNARY { $$ = new cdk::unary_plus_node(LINE, $2); }
-     | expr '+' expr         { $$ = new cdk::add_node(LINE, $1, $3); }
-     | expr '-' expr         { $$ = new cdk::sub_node(LINE, $1, $3); }
-     | expr '*' expr         { $$ = new cdk::mul_node(LINE, $1, $3); }
-     | expr '/' expr         { $$ = new cdk::div_node(LINE, $1, $3); }
-     | expr '%' expr         { $$ = new cdk::mod_node(LINE, $1, $3); }
-     | expr '<' expr         { $$ = new cdk::lt_node(LINE, $1, $3); }
-     | expr '>' expr         { $$ = new cdk::gt_node(LINE, $1, $3); }
-     | expr tGE expr         { $$ = new cdk::ge_node(LINE, $1, $3); }
-     | expr tLE expr         { $$ = new cdk::le_node(LINE, $1, $3); }
-     | expr tNE expr         { $$ = new cdk::ne_node(LINE, $1, $3); }
-     | expr tEQ expr         { $$ = new cdk::eq_node(LINE, $1, $3); }
-     | expr tAND expr        { $$ = new cdk::and_node(LINE, $1, $3); }
-     | expr tOR expr         { $$ = new cdk::or_node(LINE, $1, $3); }
-     | '(' expr ')'          { $$ = $2; }
-     | lval                  { $$ = new cdk::rvalue_node(LINE, $1); }
-     | tSET lval expr        { $$ = new cdk::assignment_node(LINE, $2, $3); }
-     | tREAD                 { $$ = new til::read_node(LINE); }
-     | tSIZEOF '(' expr ')'  { $$ = new til::sizeof_node(LINE, $3); }
-     | tOBJECTS '(' expr ')' { $$ = new til::alloc_node(LINE, $3); }
-    /* | function              { $$ = $1; } */
+expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
+     | tSTRING                       { $$ = new cdk::string_node(LINE, $1); }
+     | tDOUBLE                       { $$ = new cdk::double_node(LINE, $1); }
+     | tNULL                         { $$ = new til::nullptr_node(LINE); }
+     | '(' tREAD ')'                 { $$ = new til::read_node(LINE); }
+     | '(' '-' expr %prec tUNARY ')' { $$ = new cdk::unary_minus_node(LINE, $3); }
+     | '(' '+' expr %prec tUNARY ')' { $$ = new cdk::unary_plus_node(LINE, $3); }
+     | '(' '+' expr expr ')'         { $$ = new cdk::add_node(LINE, $3, $4); }
+     | '(' '-' expr expr ')'         { $$ = new cdk::sub_node(LINE, $3, $4); }
+     | '(' '*' expr expr ')'         { $$ = new cdk::mul_node(LINE, $3, $4); }
+     | '(' '/' expr expr ')'         { $$ = new cdk::div_node(LINE, $3, $4); }
+     | '(' '%' expr expr ')'         { $$ = new cdk::mod_node(LINE, $3, $4); }
+     | '(' '<' expr expr ')'         { $$ = new cdk::lt_node(LINE, $3, $4); }
+     | '(' '>' expr expr ')'         { $$ = new cdk::gt_node(LINE, $3, $4); }
+     | '(' tGE expr expr ')'         { $$ = new cdk::ge_node(LINE, $3, $4); }
+     | '(' tLE expr expr ')'         { $$ = new cdk::le_node(LINE, $3, $4); }
+     | '(' tNE expr expr ')'         { $$ = new cdk::ne_node(LINE, $3, $4); }
+     | '(' tEQ expr expr ')'         { $$ = new cdk::eq_node(LINE, $3, $4); }
+     | '(' '~' expr %prec tUNARY ')' { $$ = new cdk::not_node(LINE, $3); }
+     | '(' tAND expr expr ')'        { $$ = new cdk::and_node(LINE, $3, $4); }
+     | '(' tOR expr expr ')'         { $$ = new cdk::or_node(LINE, $3, $4); }
+     | lval                          { $$ = new cdk::rvalue_node(LINE, $1); }
+     | '(' tSET lval expr ')'        { $$ = new cdk::assignment_node(LINE, $3, $4); }
+     | '(' tSIZEOF expr ')'          { $$ = new til::sizeof_node(LINE, $3); }
+     | '(' tOBJECTS expr ')'         { $$ = new til::alloc_node(LINE, $3); }
      ;
 
-lval : tIDENTIFIER          { $$ = new cdk::variable_node(LINE, $1); }
-     | tINDEX expr expr     { $$ = new til::index_node(LINE, $2, $3); }
+lval : tIDENTIFIER                 { $$ = new cdk::variable_node(LINE, $1); }
+     | '(' tINDEX expr expr ')'    { $$ = new til::index_node(LINE, $3, $4); }
      ;
 
 %%
