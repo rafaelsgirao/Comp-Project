@@ -62,8 +62,8 @@
 %left '*' '/' '%' 
 %nonassoc tUNARY
 
-%type <node> program declaration instruction
-%type <sequence> exprs instructions declarations
+%type <node> program declaration instruction private_declaration
+%type <sequence> exprs instructions declarations private_declarations
 %type <expression> expr
 %type <type> type non_void_type function_type
 %type <lvalue> lval
@@ -85,22 +85,28 @@ declarations : declarations declaration { $$ = new cdk::sequence_node(LINE, $2, 
              | declaration { $$ = new cdk::sequence_node(LINE, $1); }
              ;
 
+private_declarations : private_declarations private_declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
+                     | private_declaration { $$ = new cdk::sequence_node(LINE, $1); }
+                     ;
+
 /*? Maybe needs * in identifiers $$ */
-declaration  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
-             | '(' qualifier type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
+declaration  : '(' qualifier type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
              | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); }
-             | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
-             | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
              | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); }
+             | private_declaration { $$ = $1; }
              ;
+
+private_declaration : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
+                    | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
+                    | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
 
 program : '(' tPROGRAM declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $3)); }
         ;
 
-declarations_instructions: declarations instructions   { $$ = new til::block_node(LINE, $1, $2); }
-                         | declarations                { $$ = new til::block_node(LINE, $1 , new cdk::sequence_node(LINE)); }
-                         | instructions                { $$ = new til::block_node(LINE, new cdk::sequence_node(LINE), $1); }
-                         |                             { $$ = new til::block_node(LINE, new cdk::sequence_node(LINE), new cdk::sequence_node(LINE)); }
+declarations_instructions: private_declarations instructions   { $$ = new til::block_node(LINE, $1, $2); }
+                         | private_declarations                { $$ = new til::block_node(LINE, $1 , new cdk::sequence_node(LINE)); }
+                         | instructions                        { $$ = new til::block_node(LINE, new cdk::sequence_node(LINE), $1); }
+                         |                                     { $$ = new til::block_node(LINE, new cdk::sequence_node(LINE), new cdk::sequence_node(LINE)); }
                          ;
 
 type : non_void_type  { $$ = $1; }
