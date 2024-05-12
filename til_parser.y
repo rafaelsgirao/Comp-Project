@@ -62,9 +62,9 @@
 %left '*' '/' '%' 
 %nonassoc tUNARY
 
-%type <node> program declaration instruction private_declaration
-%type <sequence> exprs instructions declarations private_declarations
-%type <expression> expr
+%type <node> program declaration instruction private_declaration function_arg
+%type <sequence> exprs instructions declarations private_declarations function_args
+%type <expression> expr function_def
 %type <type> type non_void_type function_type
 %type <lvalue> lval
 %type <block> declarations_instructions block
@@ -76,9 +76,11 @@
 %}
 %%
 
+
 file : declarations            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
      | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2))); } /* TODO: FIXME! */
      | program                 { compiler->ast(new cdk::sequence_node(LINE, $1)); }
+     | /* empty. */            { compiler->ast(new cdk::sequence_node(LINE)); } 
      ; 
 
 declarations : declarations declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
@@ -90,13 +92,13 @@ private_declarations : private_declarations private_declaration { $$ = new cdk::
                      ;
 
 /*? Maybe needs * in identifiers $$ */
-declaration  : '(' qualifier type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
+declaration  : '(' qualifier type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
              | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); }
              | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); }
              | private_declaration { $$ = $1; }
              ;
 
-private_declaration : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
+private_declaration : '(' type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
                     | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
                     | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
 
@@ -130,6 +132,23 @@ function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<st
                | '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
                ;
 
+//TODO: check/ask when to use new keyword or not.
+
+//TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
+// Nao tenho 100% certeza de estarmos a cumprir esse criterios.
+function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4) ;}
+             ; 
+
+function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
+              | function_arg { $$ = new cdk::sequence_node(LINE, $1); }
+              | /* empty. */ { $$ = new cdk::sequence_node(LINE); }
+               //RG FIXME: should I be empty or should function_def "accept" no args?
+              ; //TODO: I think var_declaration_node is wrong... 
+                // or, at least, it's not generic enough and was made just thinking of 'var'.
+
+
+function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
+              ;
 
 types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->push_back($1);}
       | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
@@ -191,6 +210,10 @@ expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
      | '(' tSET lval expr ')'        { $$ = new cdk::assignment_node(LINE, $3, $4); }
      | '(' tSIZEOF expr ')'          { $$ = new til::sizeof_node(LINE, $3); }
      | '(' tOBJECTS expr ')'         { $$ = new til::alloc_node(LINE, $3); }
+     | function_def          { $$ = $1;}
+
+          //TODO: parse all call_node (i.e, function call & self-call) possibilities
+
      ;
 
 lval : tIDENTIFIER                 { $$ = new cdk::variable_node(LINE, $1); }
