@@ -17,6 +17,10 @@ namespace til {
           //Empty
     }
 
+    cdk::expression_node *returnval() {
+      return _returnval;
+    }
+
     void accept(basic_ast_visitor *sp, int level) { sp->do_return_node(this, level); }
 
   };

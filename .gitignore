@@ -1,3 +1,5 @@
+flake.nix
+flake.lock
 .direnv
 .pre-commit-config.yaml
 .envrc

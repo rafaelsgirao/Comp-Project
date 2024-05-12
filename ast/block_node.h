@@ -18,6 +18,14 @@ namespace til {
           //Empty
     }
 
+    cdk::sequence_node * declarations() {
+      return _declarations;
+    }
+
+    cdk::sequence_node * instructions() {
+      return _instructions;
+    }
+
     void accept(basic_ast_visitor *sp, int level) { sp->do_block_node(this, level); }
 
   };

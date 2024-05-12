@@ -19,6 +19,10 @@ namespace til {
     next_node(int lineno) : cdk::basic_node(lineno),  _nth_cycle(1) {
     }
 
+    int nth_cycle() {
+      return _nth_cycle;
+    }
+
     void accept(basic_ast_visitor *sp, int level) { sp->do_next_node(this, level); }
   };
 

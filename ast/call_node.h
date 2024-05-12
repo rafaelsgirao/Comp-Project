@@ -18,6 +18,13 @@ namespace til {
         cdk::expression_node(lineno), _function(function), _args(args) {
     }
 
+    cdk::expression_node *function() {
+      return _function;
+    }
+
+    cdk::sequence_node *args() {
+      return _args;
+    }
 
     void accept(basic_ast_visitor *sp, int level) { sp->do_call_node(this, level); }
 

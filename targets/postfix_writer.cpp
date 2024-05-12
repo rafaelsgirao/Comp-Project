@@ -182,7 +182,7 @@ void til::postfix_writer::do_program_node(til::program_node * const node, int lv
   _pf.LABEL("_main");
   _pf.ENTER(0);  // Simple doesn't implement local variables
 
-  node->statements()->accept(this, lvl);
+  node->block()->accept(this, lvl);
 
   // end the main function
   _pf.INT(0);
