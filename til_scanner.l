@@ -33,7 +33,7 @@ bool convert_to_double(double &val, const std::string &s) {
   }
 }
 %}
-%x X_STRING X_COMMENT
+%x X_STRING X_COMMENT X_STRING_IGNORE
 %%
   yydebug=1; set_debug(1);
 
@@ -86,8 +86,13 @@ bool convert_to_double(double &val, const std::string &s) {
 <X_STRING>\"           yy_pop_state(); return tSTRING;
 <X_STRING>\\\"         *yylval.s += yytext + 1;
 <X_STRING>.            *yylval.s += yytext;
-<X_STRING>\\0          yyerror("null character in string");       
+<X_STRING>\\0          yy_push_state(X_STRING_IGNORE);     
 <X_STRING>\n           yyerror("newline in string");
+
+<X_STRING_IGNORE>\"       yy_pop_state(); yy_pop_state(); return tSTRING;
+<X_STRING_IGNORE>\\\"     ;
+<X_STRING_IGNORE>\\\\     ;
+<X_STRING_IGNORE>.        ;
 
 ([1-9][0-9]*)|0                  if (!convert_to_integer(yylval.i ,yytext, 10)) yyerror("Value out of range"); return tINTEGER;
 0x[0-9a-fA-F]+                   if (!convert_to_integer(yylval.i ,yytext, 16)) yyerror("Value out of range"); return tINTEGER;
