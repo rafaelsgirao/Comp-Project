@@ -13,6 +13,9 @@ til_parser.tab.c
 til_parser.tab.h
 til_scanner.cpp
 .editorconfig
+*.asm
+*.til
+*.xml
 
 # Created by https://www.toptal.com/developers/gitignore/api/java,linux,macos,direnv,windows,visualstudiocode,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,linux,macos,direnv,windows,visualstudiocode,c++
