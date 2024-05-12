@@ -92,6 +92,7 @@ private_declarations : private_declarations private_declaration { $$ = new cdk::
 declaration  : '(' qualifier type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
              | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); }
              | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); }
+             | '(' qualifier tIDENTIFIER expr ')'      { $$ = new til::var_declaration_node(LINE, $2 , *$3, $4, nullptr); }
              | private_declaration { $$ = $1; }
              ;
 
