@@ -99,6 +99,8 @@ bool convert_to_double(double &val, const std::string &s) {
 
 [ \t\n]+               ; /* ignore whitespace */
 
+@                      return tRECURSION;
+
 .                      yyerror("Unknown character");
 
 %%

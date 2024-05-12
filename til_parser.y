@@ -47,7 +47,7 @@
 
 %token tBLOCK tIF tWHILE tSTOP tNEXT tRETURN tPRINT tPRINTLN
 
-%token tREAD tNULL tSET tINDEX tOBJECTS tSIZEOF tFUNCTION 
+%token tREAD tNULL tSET tINDEX tOBJECTS tSIZEOF tFUNCTION tRECURSION
 
 %token tPROGRAM
 
@@ -59,9 +59,9 @@
 %left '*' '/' '%' 
 %nonassoc tUNARY
 
-%type <node> program declaration instruction private_declaration
-%type <sequence> exprs instructions declarations private_declarations
-%type <expression> expr function_def
+%type <node> program declaration instruction private_declaration function_arg
+%type <sequence> exprs instructions declarations private_declarations function_args
+%type <expression> expr function_def function_call
 %type <type> type non_void_type function_type
 %type <lvalue> lval
 %type <block> declarations_instructions block
@@ -120,24 +120,30 @@ non_void_type : tINT    { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT); }
               | function_type { $$ = $1; }
               ;
 
-function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $2); }
-               | '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
+function_type  :  type { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $1); }
+               |  type '(' types ')' { $$ = cdk::functional_type::create(*$3, $1); }
                ;
 
 //TODO: check/ask when to use new keyword or not.
 
 //TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
 // Nao tenho 100% certeza de estarmos a cumprir esse criterios.
-function_def : '(' tFUNCTION '(' type private_declarations ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
+function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
              | '(' tFUNCTION '(' type ')' declarations_instructions ')'                 { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
              ; 
+          
+function_call : '(' expr exprs ')'      { $$ = new til::call_node(LINE, $2, $3); }
+              | '(' expr ')'                           { $$ = new til::call_node(LINE, $2, new cdk::sequence_node(LINE)); }
+              | '(' tRECURSION ')'                     { $$ = new til::call_node(LINE, nullptr, new cdk::sequence_node(LINE)); }
+              | '(' tRECURSION exprs ')'{ $$ = new til::call_node(LINE, nullptr,$3); }
+              ;
 
-/* function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
+function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $2, $1); }
               | function_arg { $$ = new cdk::sequence_node(LINE, $1); }
               ;
 
 function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
-              ; */
+              ; 
 
 types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->push_back($1);}
       | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
@@ -200,6 +206,7 @@ expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
      | '(' tSIZEOF expr ')'          { $$ = new til::sizeof_node(LINE, $3); }
      | '(' tOBJECTS expr ')'         { $$ = new til::alloc_node(LINE, $3); }
      | function_def                  { $$ = $1;}
+     | function_call                 { $$ = $1; }
 
           //TODO: parse all call_node (i.e, function call & self-call) possibilities
 
