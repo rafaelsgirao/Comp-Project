@@ -51,12 +51,9 @@
 
 %token tPROGRAM
 
-%token tBEGIN tEND /*not sure if these are needed*/
-
-
 %nonassoc tIFX
 
-%right '=' '!'
+%right '!'
 %left tGE tLE tEQ tNE '>' '<' tAND tOR
 %left '+' '-'
 %left '*' '/' '%' 
