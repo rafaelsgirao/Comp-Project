@@ -205,6 +205,7 @@ expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
      | '(' tSET lval expr ')'        { $$ = new cdk::assignment_node(LINE, $3, $4); }
      | '(' tSIZEOF expr ')'          { $$ = new til::sizeof_node(LINE, $3); }
      | '(' tOBJECTS expr ')'         { $$ = new til::alloc_node(LINE, $3); }
+     | '(' '?' lval ')'              { $$ = new til::address_of_node(LINE, $3); }
      | function_def                  { $$ = $1;}
      | function_call                 { $$ = $1; }
 
