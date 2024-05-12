@@ -17,6 +17,10 @@ til_scanner.cpp
 *.til
 *.xml
 
+co24
+co24/
+co24/*
+
 # Created by https://www.toptal.com/developers/gitignore/api/java,linux,macos,direnv,windows,visualstudiocode,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,linux,macos,direnv,windows,visualstudiocode,c++
 
