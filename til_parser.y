@@ -120,8 +120,8 @@ non_void_type : tINT    { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT); }
               | function_type { $$ = $1; }
               ;
 
-function_type  :  type { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $1); }
-               |  type '(' types ')' { $$ = cdk::functional_type::create(*$3, $1); }
+function_type  :  '(' type ')'               { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $2); }
+               |  '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
                ;
 
 //TODO: check/ask when to use new keyword or not.
