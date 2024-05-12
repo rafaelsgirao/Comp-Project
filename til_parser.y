@@ -136,16 +136,13 @@ function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<st
 
 //TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
 // Nao tenho 100% certeza de estarmos a cumprir esse criterios.
-function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4) ;}
+function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
+             | '(' tFUNCTION '(' type ')' declarations_instructions ')' { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, 4); }
              ; 
 
 function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
               | function_arg { $$ = new cdk::sequence_node(LINE, $1); }
-              | /* empty. */ { $$ = new cdk::sequence_node(LINE); }
-               //RG FIXME: should I be empty or should function_def "accept" no args?
-              ; //TODO: I think var_declaration_node is wrong... 
-                // or, at least, it's not generic enough and was made just thinking of 'var'.
-
+              ;
 
 function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
               ;
