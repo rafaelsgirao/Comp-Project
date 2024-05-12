@@ -59,8 +59,8 @@
 %left '*' '/' '%' 
 %nonassoc tUNARY
 
-%type <node> program declaration instruction private_declaration function_arg
-%type <sequence> exprs instructions declarations private_declarations function_args
+%type <node> program declaration instruction private_declaration
+%type <sequence> exprs instructions declarations private_declarations
 %type <expression> expr function_def
 %type <type> type non_void_type function_type
 %type <lvalue> lval
@@ -75,7 +75,7 @@
 
 
 file : declarations            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
-     | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2))); } /* TODO: FIXME! */
+     | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $2, $1)); } /* TODO: FIXME! */
      | program                 { compiler->ast(new cdk::sequence_node(LINE, $1)); }
      | /* empty. */            { compiler->ast(new cdk::sequence_node(LINE)); } 
      ; 
@@ -99,7 +99,7 @@ private_declaration : '(' type tIDENTIFIER ')'      { $$ = new til::var_declarat
                     | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
                     | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
 
-program : '(' tPROGRAM declarations_instructions ')' { compiler->ast(new til::program_node(LINE, $3)); }
+program : '(' tPROGRAM declarations_instructions ')' { $$ = new til::program_node(LINE, $3); }
         ;
 
 declarations_instructions: private_declarations instructions   { $$ = new til::block_node(LINE, $1, $2); }
@@ -119,12 +119,6 @@ non_void_type : tINT    { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT); }
               | function_type { $$ = $1; }
               ;
 
-/* This is a tricky one. Create function is defined as follows:
-create (const std::vector< std::shared_ptr< basic_type > > &input_types, const std::shared_ptr< basic_type > &output_type)
-
-Therefore, the function types must be converted to a vector of types.
-*/
-
 function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $2); }
                | '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
                ;
@@ -133,16 +127,16 @@ function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<st
 
 //TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
 // Nao tenho 100% certeza de estarmos a cumprir esse criterios.
-function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
-             | '(' tFUNCTION '(' type ')' declarations_instructions ')' { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
+function_def : '(' tFUNCTION '(' type private_declarations ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
+             | '(' tFUNCTION '(' type ')' declarations_instructions ')'                 { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
              ; 
 
-function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
+/* function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
               | function_arg { $$ = new cdk::sequence_node(LINE, $1); }
               ;
 
 function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
-              ;
+              ; */
 
 types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->push_back($1);}
       | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
@@ -204,7 +198,7 @@ expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
      | '(' tSET lval expr ')'        { $$ = new cdk::assignment_node(LINE, $3, $4); }
      | '(' tSIZEOF expr ')'          { $$ = new til::sizeof_node(LINE, $3); }
      | '(' tOBJECTS expr ')'         { $$ = new til::alloc_node(LINE, $3); }
-     | function_def          { $$ = $1;}
+     | function_def                  { $$ = $1;}
 
           //TODO: parse all call_node (i.e, function call & self-call) possibilities
 
