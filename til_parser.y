@@ -134,7 +134,7 @@ function_type  : '(' type ')' { $$ = cdk::functional_type::create(std::vector<st
 //TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
 // Nao tenho 100% certeza de estarmos a cumprir esse criterios.
 function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
-             | '(' tFUNCTION '(' type ')' declarations_instructions ')' { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, 4); }
+             | '(' tFUNCTION '(' type ')' declarations_instructions ')' { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
              ; 
 
 function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $1, new cdk::sequence_node(LINE, $2)); }
