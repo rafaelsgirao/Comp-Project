@@ -51,8 +51,6 @@
 
 %token tPROGRAM
 
-%nonassoc tIFX
-
 %right '!'
 %left tGE tLE tEQ tNE '>' '<' tAND tOR
 %left '+' '-'
