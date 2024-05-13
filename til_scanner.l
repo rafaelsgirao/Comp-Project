@@ -82,12 +82,13 @@ bool convert_to_double(double &val, const std::string &s) {
 
 [A-Za-z][A-Za-z0-9_]*  yylval.s = new std::string(yytext); return tIDENTIFIER;
 
-\"                     yy_push_state(X_STRING); yylval.s = new std::string("");
-<X_STRING>\"           yy_pop_state(); return tSTRING;
-<X_STRING>\\\"         *yylval.s += yytext + 1;
-<X_STRING>.            *yylval.s += yytext;
-<X_STRING>\\0          yy_push_state(X_STRING_IGNORE);     
-<X_STRING>\n           yyerror("newline in string");
+\"                            yy_push_state(X_STRING); yylval.s = new std::string("");
+<X_STRING>\"                  yy_pop_state(); return tSTRING;
+<X_STRING>\\\"                *yylval.s += yytext + 1;
+<X_STRING>.                   *yylval.s += yytext;
+<X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += std::strtol(yytext, nullptr, 8);    
+<X_STRING>\\0                 yy_push_state(X_STRING_IGNORE);     
+<X_STRING>\n                  yyerror("newline in string");
 
 <X_STRING_IGNORE>\"       yy_pop_state(); yy_pop_state(); return tSTRING;
 <X_STRING_IGNORE>\\\"     ;
