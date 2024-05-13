@@ -86,8 +86,8 @@ bool convert_to_double(double &val, const std::string &s) {
 <X_STRING>\"                  yy_pop_state(); return tSTRING;
 <X_STRING>\\\"                *yylval.s += yytext + 1;
 <X_STRING>.                   *yylval.s += yytext;
-<X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += std::strtol(yytext, nullptr, 8);    
-<X_STRING>\\0                 yy_push_state(X_STRING_IGNORE);     
+<X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += std::strtol(yytext, nullptr, 8);
+<X_STRING>\\00?0?             yy_push_state(X_STRING_IGNORE);     
 <X_STRING>\n                  yyerror("newline in string");
 
 <X_STRING_IGNORE>\"       yy_pop_state(); yy_pop_state(); return tSTRING;
