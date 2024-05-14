@@ -224,11 +224,9 @@ void til::xml_writer::do_block_node(til::block_node * const node, int lvl) {
 void til::xml_writer::do_return_node(til::return_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
-  openTag("value", lvl + 2);
   if (node->returnval() != nullptr) {
-    node->returnval()->accept(this, lvl + 4);
+    node->returnval()->accept(this, lvl + 2);
   }
-  closeTag("value", lvl + 2);
   closeTag(node, lvl);
 }
 
