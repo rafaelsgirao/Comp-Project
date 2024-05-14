@@ -73,30 +73,30 @@
 
 
 file : declarations            { compiler->ast(new cdk::sequence_node(LINE, $1)); } 
-     | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $2, $1)); } /* TODO: FIXME! */
+     | declarations program    { compiler->ast(new cdk::sequence_node(LINE, $2, $1)); }
      | program                 { compiler->ast(new cdk::sequence_node(LINE, $1)); }
      | /* empty. */            { compiler->ast(new cdk::sequence_node(LINE)); } 
      ; 
 
 declarations : declarations declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
-             | declaration { $$ = new cdk::sequence_node(LINE, $1); }
+             | declaration              { $$ = new cdk::sequence_node(LINE, $1); }
              ;
 
 private_declarations : private_declarations private_declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
-                     | private_declaration { $$ = new cdk::sequence_node(LINE, $1); }
+                     | private_declaration                      { $$ = new cdk::sequence_node(LINE, $1); }
                      ;
 
 /*? Maybe needs * in identifiers $$ */
-declaration  : '(' qualifier type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); }
-             | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); }
-             | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); }
-             | '(' qualifier tIDENTIFIER expr ')'      { $$ = new til::var_declaration_node(LINE, $2 , *$3, $4, nullptr); }
+declaration  : '(' qualifier type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, $2, *$4, nullptr ,$3); delete $4;}
+             | '(' qualifier type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2, *$4, $5 , $3); delete $4;}
+             | '(' qualifier tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, $2 , *$4, $5, nullptr); delete $4;}
+             | '(' qualifier tIDENTIFIER expr ')'      { $$ = new til::var_declaration_node(LINE, $2 , *$3, $4, nullptr); delete $3; }
              | private_declaration { $$ = $1; }
              ;
 
-private_declaration : '(' type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
-                    | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); }
-                    | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); }
+private_declaration : '(' type tIDENTIFIER ')'      { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); delete $3; }
+                    | '(' type tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, $4, $2); delete $3; }
+                    | '(' tVAR tIDENTIFIER expr ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE ,*$3 , $4, nullptr); delete $3; }
 
 program : '(' tPROGRAM declarations_instructions ')' { $$ = new til::program_node(LINE, $3); }
         ;
@@ -119,12 +119,11 @@ non_void_type : tINT    { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT); }
               ;
 
 function_type  :  '(' type ')'               { $$ = cdk::functional_type::create(std::vector<std::shared_ptr<cdk::basic_type>>(), $2); }
-               |  '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); }
+               |  '(' type '(' types ')' ')' { $$ = cdk::functional_type::create(*$4, $2); delete $4;}
                ;
 
 //TODO: check/ask when to use new keyword or not.
 
-//TODO: legal? argumentos de funcoes teem certas restricoes, tipo nao poderem usar var.
 // Nao tenho 100% certeza de estarmos a cumprir esse criterios.
 function_def : '(' tFUNCTION '(' type function_args ')' declarations_instructions ')'   { $$ = new til::function_node(LINE, $5, $7, $4); }
              | '(' tFUNCTION '(' type ')' declarations_instructions ')'                 { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
@@ -140,11 +139,11 @@ function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $
               | function_arg { $$ = new cdk::sequence_node(LINE, $1); }
               ;
 
-function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); }
+function_arg  : '(' type tIDENTIFIER ')' { $$ = new til::var_declaration_node(LINE, tPRIVATE, *$3, nullptr, $2); delete $3;}
               ; 
 
 types : type { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); $$->push_back($1);}
-      | types type { $1->push_back($2); $$ = $1; } /* TODO: types type ou type types? i.e,recursao a esquerda ou a direita */
+      | types type { $1->push_back($2); $$ = $1; }
       ;
 
 block : '(' tBLOCK declarations_instructions ')' { $$ = $3; }
@@ -206,12 +205,9 @@ expr : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
      | '(' '?' lval ')'              { $$ = new til::address_of_node(LINE, $3); }
      | function_def                  { $$ = $1;}
      | function_call                 { $$ = $1; }
-
-          //TODO: parse all call_node (i.e, function call & self-call) possibilities
-
      ;
 
-lval : tIDENTIFIER                 { $$ = new cdk::variable_node(LINE, $1); }
+lval : tIDENTIFIER                 { $$ = new cdk::variable_node(LINE, $1); delete $1; }
      | '(' tINDEX expr expr ')'    { $$ = new til::index_node(LINE, $3, $4); }
      ;
 
