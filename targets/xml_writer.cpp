@@ -326,9 +326,15 @@ void til::xml_writer::do_function_node(til::function_node * const node, int lvl)
 void til::xml_writer::do_call_node(til::call_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
-  openTag("function", lvl + 2);
-  node->function()->accept(this, lvl + 4);
-  closeTag("function", lvl + 2);
+  if (node->function() == nullptr) {
+    emptyTag("function", lvl+2);
+  }
+  else  {
+    openTag("function", lvl + 2);
+    node->function()->accept(this, lvl + 4);
+    closeTag("function", lvl + 2);
+  }
+
   openTag("arguments", lvl + 2);
   node->args()->accept(this, lvl + 4);
   closeTag("arguments", lvl + 2);

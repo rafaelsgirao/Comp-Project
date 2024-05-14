@@ -66,11 +66,11 @@ void til::type_checker::do_unary_plus_node(cdk::unary_plus_node *const node, int
 
 void til::type_checker::processBinaryExpression(cdk::binary_operation_node *const node, int lvl) {
   ASSERT_UNSPEC;
-  node->left()->accept(this, lvl + 2);
-  if (!node->left()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in left argument of binary expression");
+  //node->left()->accept(this, lvl + 2);
+  //if (!node->left()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in left argument of binary expression");
 
-  node->right()->accept(this, lvl + 2);
-  if (!node->right()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of binary expression");
+ // node->right()->accept(this, lvl + 2);
+  //if (!node->right()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of binary expression");
 
   // in Simple, expressions are always int
   node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
@@ -137,6 +137,7 @@ void til::type_checker::do_rvalue_node(cdk::rvalue_node *const node, int lvl) {
 void til::type_checker::do_assignment_node(cdk::assignment_node *const node, int lvl) {
   ASSERT_UNSPEC;
 
+/*
   try {
     node->lvalue()->accept(this, lvl);
   } catch (const std::string &id) {
@@ -145,11 +146,12 @@ void til::type_checker::do_assignment_node(cdk::assignment_node *const node, int
     _parent->set_new_symbol(symbol);  // advise parent that a symbol has been inserted
     node->lvalue()->accept(this, lvl);  //DAVID: bah!
   }
+  */
 
-  if (!node->lvalue()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in left argument of assignment expression");
+  //if (!node->lvalue()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in left argument of assignment expression");
 
-  node->rvalue()->accept(this, lvl + 2);
-  if (!node->rvalue()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of assignment expression");
+ // node->rvalue()->accept(this, lvl + 2);
+  //TODO if (!node->rvalue()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of assignment expression");
 
   // in Simple, expressions are always int
   node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
