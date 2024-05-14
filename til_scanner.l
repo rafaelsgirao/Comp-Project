@@ -13,7 +13,7 @@
 
 bool convert_to_integer(int &val, const std::string &s, int base) {
   try {
-    val = std::strtol(s.c_str(), nullptr, base);
+    val = std::stoi(s.c_str(), nullptr, base);
     return true;
   } catch (std::invalid_argument &e) {
     return false;
@@ -88,7 +88,7 @@ bool convert_to_double(double &val, const std::string &s) {
 <X_STRING>.                   *yylval.s += yytext;
 <X_STRING>\\0                 yy_push_state(X_STRING_IGNORE);     
 <X_STRING>(\\00)|(\\000)      yyerror("invalid null char");
-<X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += std::strtol(yytext, nullptr, 8);
+<X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += std::strtoi(yytext, nullptr, 8);
 <X_STRING>\n                  yyerror("newline in string");
 
 <X_STRING_IGNORE>\"       yy_pop_state(); yy_pop_state(); return tSTRING;
