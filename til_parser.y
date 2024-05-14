@@ -130,10 +130,10 @@ function_def : '(' tFUNCTION '(' type function_args ')' declarations_instruction
              | '(' tFUNCTION '(' type ')' declarations_instructions ')'                 { $$ = new til::function_node(LINE, new cdk::sequence_node(LINE), $6, $4); }
              ; 
           
-function_call : '(' expr exprs ')'      { $$ = new til::call_node(LINE, $2, $3); }
-              | '(' expr ')'                           { $$ = new til::call_node(LINE, $2, new cdk::sequence_node(LINE)); }
-              | '(' tRECURSION ')'                     { $$ = new til::call_node(LINE, nullptr, new cdk::sequence_node(LINE)); }
-              | '(' tRECURSION exprs ')'{ $$ = new til::call_node(LINE, nullptr,$3); }
+function_call : '(' expr exprs ')'         { $$ = new til::call_node(LINE, $2, $3); }
+              | '(' expr ')'               { $$ = new til::call_node(LINE, $2, new cdk::sequence_node(LINE)); }
+              | '(' tRECURSION ')'         { $$ = new til::call_node(LINE, nullptr, new cdk::sequence_node(LINE)); }
+              | '(' tRECURSION exprs ')'   { $$ = new til::call_node(LINE, nullptr, $3); }
               ;
 
 function_args : function_args function_arg { $$ = new cdk::sequence_node(LINE, $2, $1); }
