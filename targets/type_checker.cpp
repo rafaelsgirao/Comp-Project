@@ -20,8 +20,10 @@ void til::type_checker::do_data_node(cdk::data_node *const node, int lvl) {
   // EMPTY
 }
 void til::type_checker::do_double_node(cdk::double_node *const node, int lvl) {
-  // EMPTY
+  ASSERT_UNSPEC;
+  node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
 }
+
 void til::type_checker::do_not_node(cdk::not_node *const node, int lvl) {
   // EMPTY
 }
