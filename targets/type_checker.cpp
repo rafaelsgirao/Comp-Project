@@ -8,7 +8,9 @@
 //---------------------------------------------------------------------------
 
 void til::type_checker::do_sequence_node(cdk::sequence_node *const node, int lvl) {
-  // EMPTY
+  for (auto child_node: node->nodes()) {
+    child_node->accept(this, lvl + 2);
+  }
 }
 
 //---------------------------------------------------------------------------
