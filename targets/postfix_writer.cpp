@@ -5,6 +5,7 @@
 #include ".auto/all_nodes.h"  // all_nodes.h is automatically generated
 
 //---------------------------------------------------------------------------
+// Empty methods.
 
 void til::postfix_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
   // EMPTY
@@ -12,9 +13,12 @@ void til::postfix_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
 void til::postfix_writer::do_data_node(cdk::data_node * const node, int lvl) {
   // EMPTY
 }
+//---------------------------------------------------------------------------
+
 void til::postfix_writer::do_double_node(cdk::double_node * const node, int lvl) {
-  // EMPTY
+  _pf.SDOUBLE(node->value());
 }
+
 void til::postfix_writer::do_not_node(cdk::not_node * const node, int lvl) {
   // EMPTY
 }
