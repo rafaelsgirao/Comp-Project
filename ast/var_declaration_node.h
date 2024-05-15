@@ -22,13 +22,6 @@ public:
     type(v_type);
   }
 
-  // FIXME: remove this!
-  var_declaration_node(int lineno, std::string &name,
-                       cdk::expression_node *init = nullptr,
-                       std::shared_ptr<cdk::basic_type> v_type = nullptr)
-      : cdk::typed_node(lineno), _name(name), _init(init) {
-    type(v_type);
-  }
 
     int qualifier() {
       return _qualifier;
