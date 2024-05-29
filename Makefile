@@ -72,7 +72,7 @@ $(COMPILER): $(L_NAME).o $(Y_NAME).tab.o $(OFILES)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 clean:
-	$(RM) .auto/all_nodes.h .auto/visitor_decls.h *.tab.[ch] *.o $(OFILES) $(L_NAME).cpp $(Y_NAME).output $(COMPILER)
+	$(RM) .auto/all_nodes.h .auto/visitor_decls.h *.tab.[ch] *.asm *.o $(OFILES) $(L_NAME).cpp $(Y_NAME).output $(COMPILER)
 	$(RM) [A-Z]*-ok.* [A-Z]*-ok
 
 depend: .auto/all_nodes.h
