@@ -11,6 +11,8 @@ namespace til {
     std::shared_ptr<cdk::basic_type> _type;
     std::string _name;
     long _value; // hack!
+    int _scope; 
+    
 
   public:
     symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
@@ -36,7 +38,19 @@ namespace til {
     long value(long v) {
       return _value = v;
     }
+
+    int scope() const {
+      return _scope;
+    }
+
+    void scope(int scope) {
+      _scope = scope;
+    }
   };
+
+  inline auto create_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) {
+    return std::make_shared<symbol>(type, name, value);
+  }
 
 } // til
 
