@@ -174,12 +174,21 @@ void til::type_checker::processBinaryLogicalExpression(
   case cdk::TYPE_INT:
     node->right()->accept(this, lvl + 2);
 
+    // TODO: check if we should handle  TYPE_UNSPEC case here
+    // TODO: not sure if this is complete.
     if (node->right()->is_typed(cdk::TYPE_UNSPEC)) {
       node->right()->type(node->left()->type());
-      break;
-    } // todo check if you need to verify if its not any other type
-    throw std::string(
-        "wrong type in right argument of logical binary expression");
+      node->type(node->right()->type());
+    } else if (node->right()->is_typed(cdk::TYPE_INT) ||
+               (shouldCheckDouble &&
+                node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+      node->type(node->right()->type());
+    } else {
+      // todo check if you need to verify if its not any other type
+      throw std::string(
+          "wrong type in right argument of logical binary expression");
+    }
+    break;
 
   case cdk::TYPE_DOUBLE:
     if (!shouldCheckDouble)
