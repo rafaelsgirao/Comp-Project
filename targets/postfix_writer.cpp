@@ -314,7 +314,6 @@ void til::postfix_writer::do_block_node(til::block_node *const node, int lvl) {
       throw std::string(
           "reached block end, shouldn't have any more instructions");
     }
-
     child->accept(this, lvl + 2);
   }
 
