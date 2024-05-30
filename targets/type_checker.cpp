@@ -51,38 +51,34 @@ std::string til::to_string(std::shared_ptr<cdk::basic_type> type) {
   throw std::string("Invalid node type");
 }
 
-static std::shared_ptr<cdk::reference_type>
-create_pointer_from_referenced(std::shared_ptr<cdk::basic_type> referenced) {
-  return cdk::reference_type::create(4, referenced);
-}
+bool til::deep_type_cmp(std::shared_ptr<cdk::basic_type> left,
+                   std::shared_ptr<cdk::basic_type> right) {
+  if (left->name() == cdk::TYPE_FUNCTIONAL &&
+      right->name() == cdk::TYPE_FUNCTIONAL) {
+        //Compare function types
+    auto left_func = cdk::functional_type::cast(left);
+    auto right_func = cdk::functional_type::cast(right);
 
-bool til::type_cmp(std::shared_ptr<cdk::basic_type> lhs,
-                   std::shared_ptr<cdk::basic_type> rhs) {
-  if (lhs->name() == cdk::TYPE_POINTER && rhs->name() == cdk::TYPE_POINTER) {
-    // Compare recursivly
-    return til::type_cmp(cdk::reference_type::cast(lhs)->referenced(),
-                         cdk::reference_type::cast(rhs)->referenced());
-  }
-
-  if (lhs->name() == cdk::TYPE_FUNCTIONAL &&
-      rhs->name() == cdk::TYPE_FUNCTIONAL) {
-    auto lhs_func = cdk::functional_type::cast(lhs);
-    auto rhs_func = cdk::functional_type::cast(rhs);
-
-    if (lhs_func->input_length() != rhs_func->input_length()) {
+    if (left_func->input_length() != right_func->input_length()) {
       return false;
     }
 
-    for (size_t i = 0; i < lhs_func->input_length(); i++) {
-      if (!til::type_cmp(lhs_func->input(i), rhs_func->input(i))) {
+    for (size_t i = 0; i < left_func->input_length(); i++) {
+      if (!til::deep_type_cmp(left_func->input(i), right_func->input(i))) {
         return false;
       }
     }
 
-    return til::type_cmp(lhs_func->output(0), rhs_func->output(0));
+    return til::deep_type_cmp(left_func->output(0), right_func->output(0));
   }
 
-  return lhs->name() == rhs->name();
+  if (left->name() == cdk::TYPE_POINTER && right->name() == cdk::TYPE_POINTER) {
+    // Compare recursivly
+    return til::deep_type_cmp(cdk::reference_type::cast(left)->referenced(),
+                         cdk::reference_type::cast(right)->referenced());
+  }
+
+  return left->name() == right->name();
 }
 
 static std::pair<std::shared_ptr<cdk::basic_type>,
@@ -92,7 +88,7 @@ unify(std::shared_ptr<cdk::basic_type> from,
   if (from->name() == cdk::TYPE_UNSPEC) {
     if (to->name() == cdk::TYPE_POINTER &&
         cdk::reference_type::cast(to)->referenced()->name() == cdk::TYPE_VOID) {
-      return {create_pointer_from_referenced(from), to};
+      return { cdk::reference_type::create(4, from), to };
     }
 
     return {to, to};
@@ -102,7 +98,7 @@ unify(std::shared_ptr<cdk::basic_type> from,
     if (from->name() == cdk::TYPE_POINTER &&
         cdk::reference_type::cast(from)->referenced()->name() ==
             cdk::TYPE_VOID) {
-      return {from, create_pointer_from_referenced(to)};
+      return {from, cdk::reference_type::create(4, to)};
     }
 
     return {from, from};
@@ -131,15 +127,15 @@ unify(std::shared_ptr<cdk::basic_type> from,
             unify(fromReferenced, toReferenced);
 
         if (newFromReferenced.get() != fromReferenced.get()) {
-          from = create_pointer_from_referenced(newFromReferenced);
+          from = cdk::reference_type::create(4, newFromReferenced);
         }
 
         if (newToReferenced.get() != toReferenced.get()) {
-          to = create_pointer_from_referenced(newToReferenced);
+          to = cdk::reference_type::create(4, newToReferenced);
         }
       } else if (fromReferenced->name() != cdk::TYPE_VOID &&
                  toReferenced->name() != cdk::TYPE_VOID) {
-        if (!til::type_cmp(fromReferenced, toReferenced)) {
+        if (!til::deep_type_cmp(fromReferenced, toReferenced)) {
           throw std::string("cannot unify pointers to different types");
         }
       }
@@ -347,7 +343,7 @@ void til::type_checker::do_string_node(cdk::string_node *const node, int lvl) {
 void til::type_checker::do_nullptr_node(til::nullptr_node *const node,
                                         int lvl) {
   ASSERT_UNSPEC;
-  node->type(create_pointer_from_referenced(
+  node->type(cdk::reference_type::create(4, 
       cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
 }
 
@@ -401,7 +397,7 @@ void til::type_checker::do_alloc_node(til::alloc_node *const node, int lvl) {
   unify_node_to_type(node->argument(),
                      cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 
-  node->type(create_pointer_from_referenced(
+  node->type(cdk::reference_type::create(4, 
       cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
 }
 
@@ -544,7 +540,7 @@ void til::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
         // P - U = I, U <- P
         unify_node_to_type(
             node->left(),
-            create_pointer_from_referenced(
+            cdk::reference_type::create(4, 
                 cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
             lvl + 2);
         unify_node_to_node(node->left(), node->right(), lvl + 2);
@@ -869,7 +865,7 @@ void til::type_checker::do_var_declaration_node(
       return;
     }
 
-    if (!til::type_cmp(node->type(), symbol->node()->type())) {
+    if (!til::deep_type_cmp(node->type(), symbol->node()->type())) {
       throw std::string("variable '" + node->name() +
                         "' redeclared with different type");
     }
@@ -907,7 +903,7 @@ void til::type_checker::do_index_node(til::index_node *const node, int lvl) {
   if (_isPropagating) {
     // The base node must be a pointer to this node.
     unify_node_to_type(node->base(),
-                       create_pointer_from_referenced(node->type()), lvl + 2);
+                       cdk::reference_type::create(4, node->type()), lvl + 2);
     return;
   }
 
@@ -920,7 +916,7 @@ void til::type_checker::do_index_node(til::index_node *const node, int lvl) {
   // unspec.
   auto newType =
       unify_node_to_type(node->base(),
-                         create_pointer_from_referenced(
+                         cdk::reference_type::create(4, 
                              cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
                          lvl + 2);
 
@@ -947,7 +943,7 @@ void til::type_checker::do_address_of_node(til::address_of_node *const node,
   node->lvalue()->accept(this, lvl + 2);
 
   // No matter what, the type of this node is always a pointer to the lvalue.
-  node->type(create_pointer_from_referenced(node->lvalue()->type()));
+  node->type(cdk::reference_type::create(4, node->lvalue()->type()));
 }
 
 void til::type_checker::do_evaluation_node(til::evaluation_node *const node,

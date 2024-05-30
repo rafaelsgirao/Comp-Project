@@ -35,7 +35,7 @@ void til::postfix_writer::visitCast(cdk::expression_node *const from,
 
   auto fromFunc = cdk::functional_type::cast(from->type());
   auto toFunc = cdk::functional_type::cast(to);
-  if (type_cmp(fromFunc, toFunc)) {
+  if (deep_type_cmp(fromFunc, toFunc)) {
     from->accept(this, lvl);
     return;
   }
@@ -440,9 +440,6 @@ void til::postfix_writer::do_var_declaration_node(
   if (node->qualifier() == tFORWARD) {
     if (symbol->node() == node) {
       _externalFunctionsToDeclare.insert(node->name());
-
-      // Last declaration is this forward, must mark symbol as external.
-      //    _pf.EXTERN(node->name());
     }
     return;
   }
@@ -624,12 +621,9 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
 
   _offset = 0;
 
-  _pf.TEXT();
-  _pf.ALIGN();
   _pf.ENTER(fsc.size());
 
   _symtab.push();
-  //
   node->block()->accept(this, lvl);
   _symtab.pop();
 

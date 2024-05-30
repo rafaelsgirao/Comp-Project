@@ -11,7 +11,7 @@ namespace til {
  */
 std::string to_string(std::shared_ptr<cdk::basic_type> type);
 
-bool type_cmp(std::shared_ptr<cdk::basic_type> lhs,
+bool deep_type_cmp(std::shared_ptr<cdk::basic_type> lhs,
               std::shared_ptr<cdk::basic_type> rhs);
 
 /**
