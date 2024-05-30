@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 
+#include "til_parser.tab.h"
+
 //---------------------------------------------------------------------------
 // Empty methods.
 
@@ -342,8 +344,65 @@ void til::postfix_writer::do_nullptr_node(til::nullptr_node *const node,
 void til::postfix_writer::do_sizeof_node(til::sizeof_node *const node,
                                          int lvl) {}
 
-void til::postfix_writer::do_var_declaration_node(
-    til::var_declaration_node *const node, int lvl) {}
+void til::postfix_writer::do_var_declaration_node(til::var_declaration_node *const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+
+  // auto sym = new_symbol();
+
+  // reset_new_symbol();
+
+  // //* What the heck is the offset?
+  // // The offset is the distance from the base of the stack frame to the
+  // // location of the variable. The base of the stack frame is the address
+  // // of the first local variable declared in the function. The first local
+  // // variable is at offset 0, the second at offset 4, the third at offset 8,
+  // // and so on. The offset of a variable is calculated by adding the size
+  // // of the previous variable to the offset of the previous variable.
+  // // The size of a variable is 4 bytes for an integer, 8 bytes for a double,
+  // // and the size of a pointer for a pointer.
+
+  // // Handle variable declaration in the global scope
+
+  // if (node->init() == nullptr) {
+  //   _pf.BSS();
+  //   _pf.ALIGN();
+  
+  //   if (node->qualifier() == tPUBLIC) {
+  //     _pf.GLOBAL(sym->name(), _pf.OBJ());
+  //   }
+
+  //   _pf.LABEL(sym->name());
+  //   _pf.SALLOC(sym->type()->size());
+
+  //   return;
+  // }
+
+  // auto init = node->init();
+
+  // if (!init->is_typed(cdk::TYPE_INT) && !init->is_typed(cdk::TYPE_STRING) && !init->is_typed(cdk::TYPE_DOUBLE) && !init->is_typed(cdk::TYPE_FUNCTIONAL) && !init->is_typed(cdk::TYPE_POINTER)) {
+  //   throw std::string("cannot initialize variable with non-primitive type");
+  // }
+
+  // _pf.DATA();
+  // _pf.ALIGN();
+
+  // if (node->qualifier() == tPUBLIC) {
+  //   _pf.GLOBAL(sym->name(), _pf.OBJ());
+  // }
+
+  // _pf.LABEL(sym->name());
+
+  // if (init->is_typed(cdk::TYPE_INT)) {
+  //   init->accept(this, lvl);
+  // } else if (init->is_typed(cdk::TYPE_STRING)) {
+  //   init->accept(this, lvl);
+  // } else if (init->is_typed(cdk::TYPE_DOUBLE)) {
+  //   init->accept(this, lvl);
+  // } else if (init->is_typed(cdk::TYPE_POINTER)) {
+  //   init->accept(this, lvl);
+  // }
+
+}
 
 void til::postfix_writer::do_function_node(til::function_node *const node,
                                            int lvl) {}
