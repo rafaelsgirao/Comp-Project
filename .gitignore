@@ -16,6 +16,8 @@ til_scanner.cpp
 *.asm
 *.til
 *.xml
+src
+do_tests.sh
 
 co24
 co24/
