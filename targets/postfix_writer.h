@@ -5,7 +5,9 @@
 
 #include <cdk/emitters/basic_postfix_emitter.h>
 #include <cdk/types/functional_type.h>
+#include <optional>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <unordered_set>
 #include <vector>
@@ -18,6 +20,10 @@ namespace til {
 class postfix_writer : public basic_ast_visitor {
   cdk::symbol_table<til::symbol> &_symtab;
   std::queue<std::pair<int, til::function_node *>> _deferredFunctions;
+  std::optional<std::string>
+      _externalFunctionName; // name of external function to be called, if any
+  std::set<std::string>
+      _externalFunctionsToDeclare; // set of external functions to declare
   std::vector<std::pair<int, int>> _loopLabels; // (next, stop)
   std::shared_ptr<cdk::functional_type> _functionType;
   int _function;
@@ -42,7 +48,6 @@ private:
   void visitCast(cdk::expression_node *from,
                  std::shared_ptr<cdk::basic_type> to, int lvl);
   void processCmpExpression(cdk::binary_operation_node *const node, int lvl);
-  void externIfNeeded(std::string symbol);
 
   /** Method used to generate sequential labels. */
   inline std::string mklbl(int lbl) {
