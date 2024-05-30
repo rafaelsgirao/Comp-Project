@@ -287,15 +287,26 @@ void til::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 //---------------------------------------------------------------------------
 
 void til::type_checker::do_program_node(til::program_node *const node, int lvl) {
-  // EMPTY
+  // EMPTY 
+  // TODO: Implement this
 }
 
 void til::type_checker::do_evaluation_node(til::evaluation_node *const node, int lvl) {
-  node->argument()->accept(this, lvl + 2);
+  node->argument()->accept(this, lvl + 2); //TODO Implement this
 }
 
 void til::type_checker::do_print_node(til::print_node *const node, int lvl) {
   node->arguments()->accept(this, lvl + 2);
+
+  for (size_t i = 0; i < node->arguments()->size(); i++) {
+    cdk::expression_node *arg = dynamic_cast<cdk::expression_node*>(node->arguments()->node(i));
+    if (arg->is_typed(cdk::TYPE_UNSPEC)) {
+      arg->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    }
+    else if (!arg->is_typed(cdk::TYPE_INT) && !arg->is_typed(cdk::TYPE_DOUBLE) && !arg->is_typed(cdk::TYPE_STRING)) {
+      throw std::string("wrong type in argument of print expression");
+    }
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -308,6 +319,16 @@ void til::type_checker::do_read_node(til::read_node *const node, int lvl) {
 
 void til::type_checker::do_loop_node(til::loop_node *const node, int lvl) {
   node->condition()->accept(this, lvl + 4);
+
+  switch(node->condition()->type()->name()) {
+    case cdk::TYPE_UNSPEC:
+      node->condition()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+      break;
+    case cdk::TYPE_INT:
+      break;
+    default:
+      throw std::string("wrong type in condition of loop expression");
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -399,7 +420,8 @@ void til::type_checker::do_address_of_node(til::address_of_node * const node, in
 }
 
 void til::type_checker::do_nullptr_node(til::nullptr_node * const node, int lvl) {
-
+  ASSERT_UNSPEC
+  node->type(cdk::reference_type::create(4, cdk::primitive_type::create(0, cdk::TYPE_VOID))); //TODO: Maybe should be TYPE_UNSPEC
 }
 
 void til::type_checker::do_sizeof_node(til::sizeof_node * const node, int lvl) {
