@@ -608,6 +608,7 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
 void til::postfix_writer::do_program_node(til::program_node *const node,
                                           int lvl) {
 
+  //  int lbl = 0;
   _functionType = cdk::functional_type::create(
       cdk::primitive_type::create(4, cdk::TYPE_INT));
 
@@ -632,25 +633,14 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
   node->block()->accept(this, lvl);
   _symtab.pop();
 
-  // TODO: o codigo abaixo deveria vir do return node
-  //  end the main function
-  _pf.INT(0);
-  _pf.STFVAL32();
-  _pf.LEAVE();
-  _pf.RET();
-
-  // functionLabels.pop
-  // symtab..pop
-  // TODO: do this automatically with a for loop
-  // these are just a few library function imports
-  _pf.EXTERN("readi");
-  _pf.EXTERN("printi");
-  _pf.EXTERN("prints");
-  _pf.EXTERN("println");
   for (auto name : _externalFunctionsToDeclare) {
     _pf.EXTERN(name);
   }
-  return;
+  if (!_deferredFunctions.empty()) {
+    // We have deferred functions! Let's define them now.
+    auto [lbl, function] = _deferredFunctions.front();
+    function->accept(this, lvl);
+  }
 }
 
 //---------------------------------------------------------------------------
