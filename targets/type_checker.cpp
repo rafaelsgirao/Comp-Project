@@ -294,8 +294,12 @@ void til::type_checker::do_variable_node(cdk::variable_node *const node,
 
 void til::type_checker::do_rvalue_node(cdk::rvalue_node *const node, int lvl) {
   ASSERT_UNSPEC;
-  node->lvalue()->accept(this, lvl);
-  node->type(node->lvalue()->type());
+  try {
+    node->lvalue()->accept(this, lvl);
+    node->type(node->lvalue()->type());
+  } catch (const std::string &id) {
+    throw std::string("wrong type in rvalue expression " + id);
+  }
 }
 
 void til::type_checker::do_assignment_node(cdk::assignment_node *const node,
@@ -335,16 +339,23 @@ void til::type_checker::do_program_node(til::program_node *const node, int lvl) 
 }
 
 void til::type_checker::do_evaluation_node(til::evaluation_node *const node, int lvl) {
-  node->argument()->accept(this, lvl + 2); //TODO Implement this
+  node->argument()->accept(this, lvl + 2);
+
+  if (node->argument()->is_typed(cdk::TYPE_UNSPEC)) {
+    node->argument()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+  }
 }
 
 void til::type_checker::do_print_node(til::print_node *const node, int lvl) {
+  node->arguments()->accept(this, lvl + 2);
 
   for (size_t i = 0; i < node->arguments()->size(); i++) {
     auto child =
         dynamic_cast<cdk::expression_node *>(node->arguments()->node(i));
 
-    child->accept(this, lvl);
+    if (child->is_typed(cdk::TYPE_UNSPEC)) {
+      child->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    }
 
     if (!(child->is_typed(cdk::TYPE_STRING) || child->is_typed(cdk::TYPE_INT) ||
           child->is_typed(cdk::TYPE_DOUBLE))) {
@@ -478,83 +489,64 @@ void til::type_checker::do_sizeof_node(til::sizeof_node * const node, int lvl) {
 
 void til::type_checker::do_var_declaration_node(
     til::var_declaration_node *const node, int lvl) {
-  ASSERT_UNSPEC;
-
-  if (node->type() != nullptr) {
-    if (node->init()->type() != nullptr) {
-      node->init()->accept(this, lvl + 2);
-
-      if (node->init()->is_typed(cdk::TYPE_UNSPEC)) {
-        if (node->is_typed(cdk::TYPE_DOUBLE)) {
-          node->init()->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
-        } else if (node->is_typed(cdk::TYPE_INT)) {
-          node->init()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
-        } else {
-          throw std::string("wrong type in initialization of variable");
-        }
-
-        // Check if types are the same
-        if (node->type()->name() != node->init()->type()->name()) {
-          throw std::string("wrong type in initialization of variable");
-        }
-
-      } else if (node->init()->is_typed(cdk::TYPE_POINTER) &&
-                 node->is_typed(cdk::TYPE_POINTER)) {
-        auto node_ptr = cdk::reference_type::cast(node->type());
-        auto init_ptr = cdk::reference_type::cast(node->init()->type());
-
-        if (node_ptr->referenced()->name() == cdk::TYPE_VOID ||
-            init_ptr->referenced()->name() == cdk::TYPE_VOID) {
-          node->init()->type(node->type());
-        } else if (init_ptr->referenced()->name() == cdk::TYPE_UNSPEC) {
-          node->init()->type(node->type());
-        }
-
-        // Check if the types are the same
-        if (node_ptr->referenced()->name() != init_ptr->referenced()->name() ||
-            (node_ptr->referenced()->name() == cdk::TYPE_DOUBLE &&
-             init_ptr->referenced()->name() == cdk::TYPE_INT)) {
-          throw std::string("wrong type in initialization of variable");
-        }
-      }
-    } else {
-      throw std::string("wrong type in initialization of variable");
-    }
-  } else { // Should infer type from initialization
+  if (node->init()) {
     node->init()->accept(this, lvl + 2);
 
-    if (node->init()->is_typed(cdk::TYPE_UNSPEC)) {
-      node->init()->type(
-          cdk::primitive_type::create(4, cdk::TYPE_INT)); // Why is this int?
-    } else if (node->init()->is_typed(cdk::TYPE_POINTER)) {
-      auto init_ptr = cdk::reference_type::cast(node->init()->type());
-      if (init_ptr->referenced()->name() == cdk::TYPE_VOID) {
-        throw std::string("wrong type in initialization of variable");
-      } else if (init_ptr->referenced()->name() == cdk::TYPE_UNSPEC) {
-        node->init()->type(cdk::reference_type::create(
-            4, cdk::primitive_type::create(4, cdk::TYPE_INT)));
-      }
+    if ( node->init() == nullptr || node->init()->is_typed(cdk::TYPE_UNSPEC)) {
+      node->init()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
     }
 
-    node->type(node->init()->type());
+    if (node->type() == nullptr || node->is_typed(cdk::TYPE_UNSPEC)) {
+      node->type(node->init()->type());
+    }
+
+    if (node->is_typed(cdk::TYPE_VOID)) {
+      throw std::string("variable '" + node->name() + "' cannot be of type void");
+    }
   }
 
-  if (node->qualifier() == tEXTERNAL && !node->is_typed(cdk::TYPE_FUNCTIONAL)) {
-    throw std::string("External variable must be a function");
+  auto symbol = _symtab.find_local(node->name());
+  if (symbol != nullptr)
+  {
+    if (symbol->name() == node->name()) {
+      return;
+    }
+
+    if (node->type()->name() != symbol->type()->name()) {
+      throw std::string("variable '" + node->name() + "' has a different type from its prev declaration");
+    }
+
+    if (node->qualifier() == tEXTERNAL || symbol->qualifier() == tEXTERNAL) {
+      throw std::string("variable '" + node->name() + "' redeclared as foreign");
+    }
+
+    if (symbol->qualifier() == tFORWARD) {
+      return;
+    }
+
+    if (node->qualifier() == tFORWARD) {
+      return;
+    }
+
+    throw std::string("variable '" + node->name() + "' redeclared on its scope");
   }
 
-  auto symbol = create_symbol(node->type(), node->name(), 0);
-
-  if (_symtab.insert(node->name(), symbol)) {
-    _parent->set_new_symbol(symbol);
-    return;
+  if (node->qualifier() == tEXTERNAL) {
+    // Foreign variables must be functions.
+    if (!node->is_typed(cdk::TYPE_FUNCTIONAL)) {
+      throw std::string("foreign variable must be a function");
+    }
   }
 
-  // TODO: Check symbol redeclaration
-  // auto previous = _symtab.find(node->name());
-
-  throw std::string("variable redefinition: " + node->name());
+  auto sym = std::make_shared<til::symbol>(node->type(), node->name(), 0, 0);
+  //TODO: Calculate offset
+  if (_symtab.insert(node->name(), sym)) {
+    _parent->set_new_symbol(sym);
+  }
+  
+  return;
 }
+
 
 void til::type_checker::do_function_node(til::function_node *const node,
                                          int lvl) {}

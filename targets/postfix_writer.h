@@ -15,6 +15,7 @@ class postfix_writer : public basic_ast_visitor {
   cdk::symbol_table<til::symbol> &_symtab;
   cdk::basic_postfix_emitter &_pf;
   bool _blockEnd = true;
+  long _offset = 0;
   int _lbl;
 
 public:

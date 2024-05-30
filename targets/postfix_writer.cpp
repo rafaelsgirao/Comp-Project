@@ -156,6 +156,19 @@ void til::postfix_writer::do_variable_node(cdk::variable_node *const node,
   ASSERT_SAFE_EXPRESSIONS;
   // simplified generation: all variables are global
   _pf.ADDR(node->name());
+
+  auto sym = _symtab.find(node->name());
+  if (sym == nullptr) {
+    throw std::string("undeclared variable '" + node->name() + "'");
+  }
+  if (sym->qualifier() == tEXTERNAL) {
+    _pf.EXTERN(node->name());
+  } else if (sym->offset() > 0) {
+    _pf.ADDR(node->name());
+  }
+  else {
+    _pf.LOCAL(sym->offset());
+  }
 }
 
 void til::postfix_writer::do_rvalue_node(cdk::rvalue_node *const node,
@@ -224,6 +237,10 @@ void til::postfix_writer::do_evaluation_node(til::evaluation_node *const node,
   if (node->argument()->is_typed(cdk::TYPE_INT)) {
     _pf.TRASH(4); // delete the evaluated value
   } else if (node->argument()->is_typed(cdk::TYPE_STRING)) {
+    _pf.TRASH(4); // delete the evaluated value's address
+  } else if (node->argument()->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.TRASH(8); // delete the evaluated valu
+  } else if (node->argument()->is_typed(cdk::TYPE_POINTER)) {
     _pf.TRASH(4); // delete the evaluated value's address
   } else {
     std::cerr << "ERROR: CANNOT HAPPEN!" << std::endl;
@@ -347,8 +364,8 @@ void til::postfix_writer::do_sizeof_node(til::sizeof_node *const node,
 void til::postfix_writer::do_var_declaration_node(til::var_declaration_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  auto sym = std::make_shared<til::symbol>(node->type(), node->name(), node->qualifier());
-
+  std::cout << ">>>>>>>>>>>>>>>>>>>>>>> var_declaration_node name: " << node->name() << std::endl;
+  auto sym = new_symbol();
   reset_new_symbol();
 
   //* What the heck is the offset?
@@ -367,9 +384,8 @@ void til::postfix_writer::do_var_declaration_node(til::var_declaration_node *con
     _pf.BSS();
     _pf.ALIGN();
   
-    if (node->qualifier() == tPUBLIC) {
-      _pf.GLOBAL(sym->name(), _pf.OBJ());
-    }
+    
+    _pf.GLOBAL(node->name(), _pf.OBJ());
 
     _pf.LABEL(sym->name());
     _pf.SALLOC(sym->type()->size());

@@ -5,16 +5,19 @@
 #include <memory>
 #include <cdk/types/basic_type.h>
 
+
 namespace til {
 
   class symbol {
     std::shared_ptr<cdk::basic_type> _type;
     std::string _name;
     long _value; // hack!    
+    int _qualifier = 276;
+    long _offset;
 
   public:
-    symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
-        _type(type), _name(name), _value(value) {
+    symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value, long offset = 0) :
+        _type(type), _name(name), _value(value), _offset(offset) {
     }
 
     virtual ~symbol() {
@@ -36,10 +39,28 @@ namespace til {
     long value(long v) {
       return _value = v;
     }
+
+    int qualifier() const {
+      return _qualifier;
+    }
+
+    void qualifier(int q) {
+      _qualifier = q;
+    }
+
+    void offset(long o) {
+      _offset = o;
+    }
+
+    long offset() const {
+      return _offset;
+    }
+
+
   };
 
-  inline auto create_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) {
-    return std::make_shared<symbol>(type, name, value);
+  inline auto create_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value, long offset = 0) {
+    return std::make_shared<symbol>(type, name, value, offset);
   }
 
 } // til
