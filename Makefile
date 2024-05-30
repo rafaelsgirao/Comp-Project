@@ -17,7 +17,7 @@ Y_NAME=$(LANGUAGE)_parser
 
 LFLAGS   = 
 YFLAGS   = -dtv --debug
-#CXX = ccache g++
+CXX = ccache g++
 CXXFLAGS = -std=c++20 -pedantic -Wall -Wextra -ggdb -I. -I$(CDK_INC_DIR) -Wno-unused-parameter -msse2 -mfpmath=sse
 #CXXFLAGS = -std=c++20 -DYYDEBUG=1 -pedantic -Wall -Wextra -ggdb -I. -I$(CDK_INC_DIR) -Wno-unused-parameter
 LDFLAGS  = -L$(CDK_LIB_DIR) -lcdk #-lLLVM

@@ -294,12 +294,8 @@ void til::type_checker::do_variable_node(cdk::variable_node *const node,
 
 void til::type_checker::do_rvalue_node(cdk::rvalue_node *const node, int lvl) {
   ASSERT_UNSPEC;
-  try {
-    node->lvalue()->accept(this, lvl);
-    node->type(node->lvalue()->type());
-  } catch (const std::string &id) {
-    throw "undeclared variable '" + id + "'";
-  }
+  node->lvalue()->accept(this, lvl);
+  node->type(node->lvalue()->type());
 }
 
 void til::type_checker::do_assignment_node(cdk::assignment_node *const node,
