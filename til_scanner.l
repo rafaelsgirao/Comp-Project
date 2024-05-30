@@ -87,13 +87,16 @@ bool convert_to_double(double &val, const std::string &s) {
 <X_STRING>\\\"                *yylval.s += yytext + 1;
 <X_STRING>.                   *yylval.s += yytext;
 <X_STRING>\n                  yyerror("newline in string");
-<X_STRING>\\0                 yy_push_state(X_STRING_IGNORE);     
+<X_STRING>\\0                 yy_push_state(X_STRING_IGNORE);
+<X_STRING>\\t                 *yylval.s += '\t';
+<X_STRING>\\n                 *yylval.s += '\n';
+<X_STRING>\\r                 *yylval.s += '\r';     
 <X_STRING>(\\00)|(\\000)      yyerror("invalid null char");
 <X_STRING>\\[0-7][0-7]?[0-7]? *yylval.s += (char)strtol(yytext + 1, nullptr, 8);
-<X_STRING_IGNORE>\"       yy_pop_state(); yy_pop_state(); return tSTRING;
-<X_STRING_IGNORE>\\\"     ;
-<X_STRING_IGNORE>\\\\     ;
-<X_STRING_IGNORE>.        ;
+<X_STRING_IGNORE>\"           yy_pop_state(); yy_pop_state(); return tSTRING;
+<X_STRING_IGNORE>\\\"         ;
+<X_STRING_IGNORE>\\\\         ;
+<X_STRING_IGNORE>.            ;
 
 ([1-9][0-9]*)|0                  if (!convert_to_integer(yylval.i ,yytext, 10)) yyerror("Value out of range"); return tINTEGER;
 0x[0-9a-fA-F]+                   if (!convert_to_integer(yylval.i ,yytext, 16)) yyerror("Value out of range"); return tINTEGER;
