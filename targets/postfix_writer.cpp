@@ -94,13 +94,6 @@ void til::postfix_writer::visitCast(cdk::expression_node *const from,
   }
 }
 
-void til::postfix_writer::externIfNeeded(std::string symbol) {
-  if (_externSymbols.count(symbol) == 0) {
-    _externSymbols.insert(symbol);
-    _pf.EXTERN(symbol);
-  }
-}
-
 //---------------------------------------------------------------------------
 
 void til::postfix_writer::do_nil_node(cdk::nil_node *const node, int lvl) {
@@ -324,7 +317,7 @@ void til::postfix_writer::do_variable_node(cdk::variable_node *const node,
   ASSERT_SAFE_EXPRESSIONS;
   auto symbol = _symtab.find(node->name());
   if (symbol->node()->qualifier() == tEXTERNAL) {
-    _pf.ADDR("_FOREIGN_" + node->name());
+    _pf.ADDR("_EXTERNAL_" + node->name());
   } else if (symbol->offset() == 1) {
     _pf.ADDR(node->name());
   } else {
@@ -438,7 +431,7 @@ void til::postfix_writer::do_var_declaration_node(
   if (node->qualifier() == tEXTERNAL) {
     _pf.RODATA();
     _pf.ALIGN();
-    _pf.LABEL("_FOREIGN_" + node->name());
+    _pf.LABEL("_EXTERNAL_" + node->name());
     _pf.EXTERN(node->name());
     _pf.SADDR(node->name());
     return;
@@ -446,8 +439,10 @@ void til::postfix_writer::do_var_declaration_node(
 
   if (node->qualifier() == tFORWARD) {
     if (symbol->node() == node) {
+      _externalFunctionsToDeclare.insert(node->name());
+
       // Last declaration is this forward, must mark symbol as external.
-      _pf.EXTERN(node->name());
+      //    _pf.EXTERN(node->name());
     }
     return;
   }
@@ -613,6 +608,7 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
 void til::postfix_writer::do_program_node(til::program_node *const node,
                                           int lvl) {
 
+  //  int lbl = 0;
   _functionType = cdk::functional_type::create(
       cdk::primitive_type::create(4, cdk::TYPE_INT));
 
@@ -635,23 +631,7 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
   _symtab.push();
   //
   node->block()->accept(this, lvl);
-
-  // TODO: o codigo abaixo deveria vir do return node
-  //  end the main function
-  _pf.INT(0);
-  _pf.STFVAL32();
-  _pf.LEAVE();
-  _pf.RET();
-
-  // functionLabels.pop
-  // symtab..pop
   _symtab.pop();
-  // TODO: do this automatically with a for loop
-  // these are just a few library function imports
-  _pf.EXTERN("readi");
-  _pf.EXTERN("printi");
-  _pf.EXTERN("prints");
-  _pf.EXTERN("println");
 
   _functionType = nullptr;
 
@@ -660,6 +640,10 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
     // We have deferred functions! Let's define them now.
     auto [lbl, function] = _deferredFunctions.front();
     function->accept(this, lvl);
+  }
+
+  for (auto name : _externalFunctionsToDeclare) {
+    _pf.EXTERN(name);
   }
 }
 
@@ -678,22 +662,22 @@ void til::postfix_writer::do_print_node(til::print_node *const node, int lvl) {
     auto *typed = static_cast<cdk::typed_node *>(argument);
     typed->accept(this, lvl); // determine the value to print
     if (typed->is_typed(cdk::TYPE_INT)) {
-      externIfNeeded("printi");
+      _externalFunctionsToDeclare.insert("printi");
       _pf.CALL("printi");
       _pf.TRASH(4); // delete the printed value
     } else if (typed->is_typed(cdk::TYPE_DOUBLE)) {
-      externIfNeeded("printd");
+      _externalFunctionsToDeclare.insert("printd");
       _pf.CALL("printd");
       _pf.TRASH(8); // delete the printed value
     } else if (typed->is_typed(cdk::TYPE_STRING)) {
-      externIfNeeded("prints");
+      _externalFunctionsToDeclare.insert("prints");
       _pf.CALL("prints");
       _pf.TRASH(4); // delete the printed value's address
     }
   }
 
   if (node->newline()) {
-    externIfNeeded("println");
+    _externalFunctionsToDeclare.insert("println");
     _pf.CALL("println");
   }
 }
@@ -703,11 +687,13 @@ void til::postfix_writer::do_print_node(til::print_node *const node, int lvl) {
 void til::postfix_writer::do_read_node(til::read_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   if (node->is_typed(cdk::TYPE_INT)) {
-    externIfNeeded("readi");
+    _externalFunctionsToDeclare.insert("readi");
+
     _pf.CALL("readi");
     _pf.LDFVAL32();
   } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
-    externIfNeeded("readd");
+    _externalFunctionsToDeclare.insert("readd");
+
     _pf.CALL("readd");
     _pf.LDFVAL64();
   }
