@@ -17,7 +17,19 @@ Y_NAME=$(LANGUAGE)_parser
 
 LFLAGS   = 
 YFLAGS   = -dtv --debug
-CXX = ccache g++
+
+# Check if ccache exists and update CXX accordingly
+ifeq ($(shell command -v ccache 2>/dev/null),)
+    # ccache not found
+    $(info ccache not found, using default compiler)
+else
+    # ccache found
+    CXX := ccache g++
+    $(info Using ccache with g++)
+endif
+
+# Rest of your Makefile
+
 CXXFLAGS = -std=c++20 -pedantic -Wall -Wextra -ggdb -I. -I$(CDK_INC_DIR) -Wno-unused-parameter -msse2 -mfpmath=sse
 #CXXFLAGS = -std=c++20 -DYYDEBUG=1 -pedantic -Wall -Wextra -ggdb -I. -I$(CDK_INC_DIR) -Wno-unused-parameter
 LDFLAGS  = -L$(CDK_LIB_DIR) -lcdk #-lLLVM
