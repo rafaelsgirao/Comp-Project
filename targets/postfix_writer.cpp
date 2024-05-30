@@ -554,7 +554,6 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
                                            int lvl) {
   int lbl = 0;
 
-  // GIRAO FIXME: NOS TEMOS PROGRAM_NODE E ELES NAO
   if (_functionType != nullptr) {
     // Nested function! Defer its definition to the end of the parent function.
     _pf.ADDR(mklbl(lbl = ++_lbl));
@@ -566,9 +565,10 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
     // We are defining a previously deferred function - get its label.
     lbl = _deferredFunctions.front().first;
     _deferredFunctions.pop();
+  } else {
+    // This is a function expression on a global variable.
+    _pf.SADDR(mklbl(lbl = ++_lbl));
   }
-  // This is a function expression on a global variable.
-  _pf.SADDR(mklbl(lbl = ++_lbl));
 
   ASSERT_SAFE_EXPRESSIONS;
 
@@ -632,7 +632,7 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
   _pf.ALIGN();
   _pf.ENTER(fsc.size());
 
-  // TODO: symtab push
+  _symtab.push();
   //
   node->block()->accept(this, lvl);
 
@@ -645,12 +645,22 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
 
   // functionLabels.pop
   // symtab..pop
+  _symtab.pop();
   // TODO: do this automatically with a for loop
   // these are just a few library function imports
   _pf.EXTERN("readi");
   _pf.EXTERN("printi");
   _pf.EXTERN("prints");
   _pf.EXTERN("println");
+
+  _functionType = nullptr;
+
+  if (!_deferredFunctions.empty())
+  {
+    // We have deferred functions! Let's define them now.
+    auto [lbl, function] = _deferredFunctions.front();
+    function->accept(this, lvl);
+  }
 }
 
 //---------------------------------------------------------------------------
