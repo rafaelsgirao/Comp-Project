@@ -1,5 +1,5 @@
-#ifndef __TIL_TARGETS_FRAME_SIZE_CALCULATOR_H__
-#define __TIl_TARGETS_FRAME_SIZE_CALCULATOR_H__
+#ifndef __TIL_TARGETS_OFFSET_CHECKER_H__
+#define __TIl_TARGETS_OFFSET_CHECKER_H__
 
 #include "targets/basic_ast_visitor.h"
 #include <cdk/types/functional_type.h>
@@ -9,13 +9,13 @@ namespace til {
 /**
  * Finds the size of a function's frame.
  */
-class frame_size_calculator : public basic_ast_visitor {
+class offset_checker : public basic_ast_visitor {
   cdk::symbol_table<til::symbol> &_symtab;
   std::shared_ptr<cdk::functional_type> _functionType;
   std::size_t _size;
 
 public:
-  frame_size_calculator(std::shared_ptr<cdk::compiler> compiler,
+  offset_checker(std::shared_ptr<cdk::compiler> compiler,
                         cdk::symbol_table<til::symbol> &symtab,
                         std::shared_ptr<cdk::functional_type> functionType)
       : basic_ast_visitor(compiler), _symtab(symtab),

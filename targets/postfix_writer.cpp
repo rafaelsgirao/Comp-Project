@@ -1,6 +1,6 @@
 #include "targets/postfix_writer.h"
 #include ".auto/all_nodes.h" // all_nodes.h is automatically generated
-#include "targets/frame_size_calculator.h"
+#include "targets/offset_checker.h"
 #include "targets/type_checker.h"
 #include "til_parser.tab.h"
 #include <sstream>
@@ -565,7 +565,7 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
   ASSERT_SAFE_EXPRESSIONS;
 
   // Get the size of the function frame.
-  til::frame_size_calculator fsc(_compiler, _symtab, _functionType);
+  til::offset_checker fsc(_compiler, _symtab, _functionType);
   node->block()->accept(&fsc, lvl);
 
   _functionType = cdk::functional_type::cast(node->type());
@@ -615,7 +615,7 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
   _pf.LABEL("_main");
 
   // Get the size of the function frame.
-  til::frame_size_calculator fsc(_compiler, _symtab, _functionType);
+  til::offset_checker fsc(_compiler, _symtab, _functionType);
   node->block()->accept(&fsc, lvl);
 
   _offset = 0;

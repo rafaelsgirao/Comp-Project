@@ -45,13 +45,13 @@ protected:
   void process_literal(cdk::literal_node<T> *const node, int lvl) {}
 
   std::shared_ptr<cdk::basic_type>
-  unify_node_to_type(cdk::typed_node *const from,
+  unify_node_with_type(cdk::typed_node *const from,
                      std::shared_ptr<cdk::basic_type> to, int lvl);
-  void unify_node_to_node(cdk::typed_node *const from,
+  void unify_nodes(cdk::typed_node *const from,
                           cdk::typed_node *const to, int lvl);
-  bool test_unify_node_to_type(cdk::typed_node *const from,
+  bool test_unify_node_with_type(cdk::typed_node *const from,
                                std::shared_ptr<cdk::basic_type> to, int lvl);
-  void default_node_to_int(cdk::typed_node *const node, int lvl);
+  void convert_node_to_int(cdk::typed_node *const node, int lvl);
   void propagate(cdk::typed_node *const node, int lvl);
 
 public:
