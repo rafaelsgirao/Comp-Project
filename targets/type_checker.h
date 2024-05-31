@@ -12,7 +12,7 @@ namespace til {
 std::string to_string(std::shared_ptr<cdk::basic_type> type);
 
 bool deep_type_cmp(std::shared_ptr<cdk::basic_type> lhs,
-              std::shared_ptr<cdk::basic_type> rhs);
+                   std::shared_ptr<cdk::basic_type> rhs);
 
 /**
  * Print nodes as XML elements to the output stream.
@@ -46,11 +46,11 @@ protected:
 
   std::shared_ptr<cdk::basic_type>
   unify_node_with_type(cdk::typed_node *const from,
-                     std::shared_ptr<cdk::basic_type> to, int lvl);
-  void unify_nodes(cdk::typed_node *const from,
-                          cdk::typed_node *const to, int lvl);
+                       std::shared_ptr<cdk::basic_type> to, int lvl);
+  void unify_nodes(cdk::typed_node *const from, cdk::typed_node *const to,
+                   int lvl);
   bool test_unify_node_with_type(cdk::typed_node *const from,
-                               std::shared_ptr<cdk::basic_type> to, int lvl);
+                                 std::shared_ptr<cdk::basic_type> to, int lvl);
   void convert_node_to_int(cdk::typed_node *const node, int lvl);
   void propagate(cdk::typed_node *const node, int lvl);
 

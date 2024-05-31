@@ -15,17 +15,17 @@
 namespace til {
 
 class whileConds {
-  public:
-    int next;
-    int stop;
-    whileConds(int next, int stop) : next(next), stop(stop) {}
+public:
+  int next;
+  int stop;
+  whileConds(int next, int stop) : next(next), stop(stop) {}
 };
 
 class functionQueue {
-  public:
-    int label;
-    til::function_node *node;
-    functionQueue(int next, til::function_node *node) : label(next), node(node) {}
+public:
+  int label;
+  til::function_node *node;
+  functionQueue(int next, til::function_node *node) : label(next), node(node) {}
 };
 
 //!
@@ -38,7 +38,7 @@ class postfix_writer : public basic_ast_visitor {
       _externalFunctionName; // name of external function to be called, if any
   std::queue<functionQueue> _functionQueue;
   std::set<std::string>
-      _externalFunctionsToDeclare; // set of external functions to declare
+      _externalFunctionsToDeclare;     // set of external functions to declare
   std::vector<whileConds> _whileConds; // (next, stop)
   std::shared_ptr<cdk::functional_type> _functionType;
   cdk::basic_postfix_emitter &_pf;
