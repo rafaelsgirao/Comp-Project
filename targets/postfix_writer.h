@@ -59,8 +59,9 @@ public:
 private:
   void cast(std::shared_ptr<cdk::basic_type> from,
             std::shared_ptr<cdk::basic_type> to);
-  void visitCast(cdk::expression_node *from,
-                 std::shared_ptr<cdk::basic_type> to, int lvl);
+  void handleCast(cdk::expression_node *const source_node,
+                                     std::shared_ptr<cdk::basic_type> target_type,
+                                     int level);
   void processCmpExpression(cdk::binary_operation_node *const node, int lvl);
 
   /** Method used to generate sequential labels. */

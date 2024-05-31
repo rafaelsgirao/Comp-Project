@@ -17,80 +17,94 @@ void til::postfix_writer::cast(std::shared_ptr<cdk::basic_type> from,
   }
 }
 
-void til::postfix_writer::visitCast(cdk::expression_node *const from,
-                                    std::shared_ptr<cdk::basic_type> to,
-                                    int lvl) {
-  if (!from->is_typed(cdk::TYPE_FUNCTIONAL)) {
-    if (_functionType == nullptr && to->name() == cdk::TYPE_DOUBLE &&
-        from->is_typed(cdk::TYPE_INT)) {
-      auto integer = static_cast<cdk::literal_node<int> *>(from);
-      _pf.SDOUBLE(static_cast<double>(integer->value()));
+void til::postfix_writer::handleCast(cdk::expression_node *const source_node,
+                                     std::shared_ptr<cdk::basic_type> target_type,
+                                     int level) {
+  if (!source_node->is_typed(cdk::TYPE_FUNCTIONAL)) {
+    if (_functionType == nullptr && target_type->name() == cdk::TYPE_DOUBLE &&
+        source_node->is_typed(cdk::TYPE_INT)) {
+      auto int_literal = static_cast<cdk::literal_node<int> *>(source_node);
+      _pf.SDOUBLE(static_cast<double>(int_literal->value()));
       return;
     }
 
-    from->accept(this, lvl);
-    cast(from->type(), to);
+    source_node->accept(this, level);
+    cast(source_node->type(), target_type);
     return;
   }
 
-  auto fromFunc = cdk::functional_type::cast(from->type());
-  auto toFunc = cdk::functional_type::cast(to);
-  if (deep_type_cmp(fromFunc, toFunc)) {
-    from->accept(this, lvl);
+  auto source_func_type = cdk::functional_type::cast(source_node->type());
+  auto target_func_type = cdk::functional_type::cast(target_type);
+  if (deep_type_cmp(source_func_type, target_func_type)) {
+    source_node->accept(this, level);
     return;
   }
 
-  int lbl1 = ++_lbl, lbl2 = 0;
+  int label1 = ++_lbl, label2 = 0;
 
   if (_functionType != nullptr) {
-    _pf.ADDR(mklbl(lbl1));
-    _pf.JMP(mklbl(lbl2 = ++_lbl));
+    _pf.ADDR(mklbl(label1));
+    _pf.JMP(mklbl(label2 = ++_lbl));
   } else {
-    _pf.SADDR(mklbl(lbl1));
+    _pf.SADDR(mklbl(label1));
     _pf.TEXT();
   }
 
   _pf.ALIGN();
-  _pf.LABEL(mklbl(lbl1));
+  _pf.LABEL(mklbl(label1));
   _pf.ENTER(0);
 
-  int offset = 8 + static_cast<int>(fromFunc->input()->size());
-  for (std::size_t i = toFunc->input_length(); i > 0; --i) {
-    offset -= fromFunc->input(i - 1)->size();
+  int offset = 8 + static_cast<int>(source_func_type->input()->size());
+  for (std::size_t i = target_func_type->input_length(); i > 0; --i) {
+    offset -= source_func_type->input(i - 1)->size();
     _pf.LOCAL(offset);
-    if (toFunc->input(i - 1)->name() == cdk::TYPE_DOUBLE) {
-      _pf.LDDOUBLE();
-    } else {
-      _pf.LDINT();
+
+    switch (target_func_type->input(i - 1)->name()) {
+      case cdk::TYPE_DOUBLE:
+        _pf.LDDOUBLE();
+        break;
+      default:
+        _pf.LDINT();
+        break;
     }
-    cast(toFunc->input(i - 1), fromFunc->input(i - 1));
+    cast(target_func_type->input(i - 1), source_func_type->input(i - 1));
   }
 
-  from->accept(this, lvl);
+  source_node->accept(this, level);
   _pf.BRANCH();
-  if (fromFunc->input_length() > 0) {
-    _pf.TRASH(static_cast<int>(fromFunc->input()->size()));
+  if (source_func_type->input_length() > 0) {
+    _pf.TRASH(static_cast<int>(source_func_type->input()->size()));
   }
 
-  if (fromFunc->output(0)->name() == cdk::TYPE_DOUBLE) {
-    _pf.LDFVAL64();
-  } else if (fromFunc->output(0)->name() != cdk::TYPE_VOID) {
-    _pf.LDFVAL32();
+  switch (source_func_type->output(0)->name()) {
+    case cdk::TYPE_DOUBLE:
+      _pf.LDFVAL64();
+      break;
+    case cdk::TYPE_VOID:
+      break;
+    default:
+      _pf.LDFVAL32();
+      break;
   }
 
-  cast(fromFunc->output(0), toFunc->output(0));
+  cast(source_func_type->output(0), target_func_type->output(0));
 
-  if (toFunc->output(0)->name() == cdk::TYPE_DOUBLE) {
-    _pf.STFVAL64();
-  } else if (toFunc->output(0)->name() != cdk::TYPE_VOID) {
-    _pf.STFVAL32();
+  switch (target_func_type->output(0)->name()) {
+    case cdk::TYPE_DOUBLE:
+      _pf.STFVAL64();
+      break;
+    case cdk::TYPE_VOID:
+      break;
+    default:
+      _pf.STFVAL32();
+      break;
   }
 
   _pf.LEAVE();
   _pf.RET();
 
   if (_functionType != nullptr) {
-    _pf.LABEL(mklbl(lbl2));
+    _pf.LABEL(mklbl(label2));
   }
 }
 
@@ -159,8 +173,8 @@ void til::postfix_writer::do_string_node(cdk::string_node *const node,
 void til::postfix_writer::do_add_node(cdk::add_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  visitCast(node->left(), node->type(), lvl);
-  visitCast(node->right(), node->type(), lvl);
+  handleCast(node->left(), node->type(), lvl);
+  handleCast(node->right(), node->type(), lvl);
 
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DADD();
@@ -171,8 +185,8 @@ void til::postfix_writer::do_add_node(cdk::add_node *const node, int lvl) {
 void til::postfix_writer::do_sub_node(cdk::sub_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  visitCast(node->left(), node->type(), lvl);
-  visitCast(node->right(), node->type(), lvl);
+  handleCast(node->left(), node->type(), lvl);
+  handleCast(node->right(), node->type(), lvl);
 
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DSUB();
@@ -191,8 +205,8 @@ void til::postfix_writer::do_sub_node(cdk::sub_node *const node, int lvl) {
 void til::postfix_writer::do_mul_node(cdk::mul_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  visitCast(node->left(), node->type(), lvl);
-  visitCast(node->right(), node->type(), lvl);
+  handleCast(node->left(), node->type(), lvl);
+  handleCast(node->right(), node->type(), lvl);
 
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DMUL();
@@ -203,8 +217,8 @@ void til::postfix_writer::do_mul_node(cdk::mul_node *const node, int lvl) {
 void til::postfix_writer::do_div_node(cdk::div_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  visitCast(node->left(), node->type(), lvl);
-  visitCast(node->right(), node->type(), lvl);
+  handleCast(node->left(), node->type(), lvl);
+  handleCast(node->right(), node->type(), lvl);
 
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DDIV();
@@ -342,7 +356,7 @@ void til::postfix_writer::do_assignment_node(cdk::assignment_node *const node,
                                              int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
-  visitCast(node->rvalue(), node->lvalue()->type(), lvl);
+  handleCast(node->rvalue(), node->lvalue()->type(), lvl);
   if (node->lvalue()->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DUP64();
   } else {
@@ -370,7 +384,7 @@ void til::postfix_writer::do_return_node(til::return_node *const node,
   if (node->returnval() != nullptr) {
     auto returnType = cdk::functional_type::cast(_functionType)->output(0);
 
-    visitCast(node->returnval(), returnType, lvl);
+    handleCast(node->returnval(), returnType, lvl);
     if (returnType->name() == cdk::TYPE_DOUBLE) {
       _pf.STFVAL64();
     } else {
@@ -460,14 +474,14 @@ void til::postfix_writer::do_var_declaration_node(
     if (node->init() == nullptr) {
       _pf.SALLOC(node->type()->size());
     } else {
-      visitCast(node->init(), node->type(), lvl);
+      handleCast(node->init(), node->type(), lvl);
     }
   } else {
     _offset -= node->type()->size();
     symbol->offset(_offset);
 
     if (node->init() != nullptr) {
-      visitCast(node->init(), node->type(), lvl);
+      handleCast(node->init(), node->type(), lvl);
       _pf.LOCAL(_offset);
       if (node->type()->name() == cdk::TYPE_DOUBLE) {
         _pf.STDOUBLE();
@@ -490,7 +504,7 @@ void til::postfix_writer::do_call_node(til::call_node *const node, int lvl) {
   long argsSize = 0;
   for (auto i = node->args()->size(); i > 0; --i) {
     auto exp = static_cast<cdk::expression_node *>(node->args()->node(i - 1));
-    visitCast(exp, functionType->input(i - 1), lvl);
+    handleCast(exp, functionType->input(i - 1), lvl);
     argsSize += functionType->input(i - 1)->size();
   }
 
