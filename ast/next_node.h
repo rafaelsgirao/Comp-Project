@@ -5,27 +5,24 @@
 
 namespace til {
 
-  /**
-   * Class for describing if-then nodes.
-   */
-  class next_node : public cdk::basic_node {
-    int _nth_cycle;
+/**
+ * Class for describing if-then nodes.
+ */
+class next_node : public cdk::basic_node {
+  int _nth_cycle;
 
-  public:
-    next_node(int lineno, int n) :
-        cdk::basic_node(lineno), _nth_cycle(n) {
-    }
+public:
+  next_node(int lineno, int n) : cdk::basic_node(lineno), _nth_cycle(n) {}
 
-    next_node(int lineno) : cdk::basic_node(lineno),  _nth_cycle(1) {
-    }
+  next_node(int lineno) : cdk::basic_node(lineno), _nth_cycle(1) {}
 
-    int nth_cycle() {
-      return _nth_cycle;
-    }
+  int nth_cycle() { return _nth_cycle; }
 
-    void accept(basic_ast_visitor *sp, int level) { sp->do_next_node(this, level); }
-  };
+  void accept(basic_ast_visitor *sp, int level) {
+    sp->do_next_node(this, level);
+  }
+};
 
-} // til
+} // namespace til
 
 #endif

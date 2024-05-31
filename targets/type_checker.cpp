@@ -52,10 +52,10 @@ std::string til::to_string(std::shared_ptr<cdk::basic_type> type) {
 }
 
 bool til::deep_type_cmp(std::shared_ptr<cdk::basic_type> left,
-                   std::shared_ptr<cdk::basic_type> right) {
+                        std::shared_ptr<cdk::basic_type> right) {
   if (left->name() == cdk::TYPE_FUNCTIONAL &&
       right->name() == cdk::TYPE_FUNCTIONAL) {
-        //Compare function types
+    // Compare function types
     auto left_func = cdk::functional_type::cast(left);
     auto right_func = cdk::functional_type::cast(right);
 
@@ -75,7 +75,7 @@ bool til::deep_type_cmp(std::shared_ptr<cdk::basic_type> left,
   if (left->name() == cdk::TYPE_POINTER && right->name() == cdk::TYPE_POINTER) {
     // Compare recursivly
     return til::deep_type_cmp(cdk::reference_type::cast(left)->referenced(),
-                         cdk::reference_type::cast(right)->referenced());
+                              cdk::reference_type::cast(right)->referenced());
   }
 
   return left->name() == right->name();
@@ -87,96 +87,105 @@ unify_types(std::shared_ptr<cdk::basic_type> src_type,
             std::shared_ptr<cdk::basic_type> dest_type) {
 
   switch (src_type->name()) {
-    case cdk::TYPE_UNSPEC: {
-      if (dest_type->name() == cdk::TYPE_POINTER &&
-          cdk::reference_type::cast(dest_type)->referenced()->name() == cdk::TYPE_VOID) {
-        return {cdk::reference_type::create(4, src_type), dest_type};
-      }
-      return {dest_type, dest_type};
+  case cdk::TYPE_UNSPEC: {
+    if (dest_type->name() == cdk::TYPE_POINTER &&
+        cdk::reference_type::cast(dest_type)->referenced()->name() ==
+            cdk::TYPE_VOID) {
+      return {cdk::reference_type::create(4, src_type), dest_type};
     }
+    return {dest_type, dest_type};
+  }
 
-    case cdk::TYPE_POINTER: {
-      if (dest_type->name() == cdk::TYPE_POINTER) {
-        auto src_referenced = cdk::reference_type::cast(src_type)->referenced();
-        auto dest_referenced = cdk::reference_type::cast(dest_type)->referenced();
+  case cdk::TYPE_POINTER: {
+    if (dest_type->name() == cdk::TYPE_POINTER) {
+      auto src_referenced = cdk::reference_type::cast(src_type)->referenced();
+      auto dest_referenced = cdk::reference_type::cast(dest_type)->referenced();
 
-        if ((src_referenced->name() == cdk::TYPE_POINTER &&
-             dest_referenced->name() == cdk::TYPE_POINTER) ||
-            src_referenced->name() == cdk::TYPE_UNSPEC ||
-            dest_referenced->name() == cdk::TYPE_UNSPEC) {
-          auto [new_src_referenced, new_dest_referenced] = unify_types(src_referenced, dest_referenced);
+      if ((src_referenced->name() == cdk::TYPE_POINTER &&
+           dest_referenced->name() == cdk::TYPE_POINTER) ||
+          src_referenced->name() == cdk::TYPE_UNSPEC ||
+          dest_referenced->name() == cdk::TYPE_UNSPEC) {
+        auto [new_src_referenced, new_dest_referenced] =
+            unify_types(src_referenced, dest_referenced);
 
-          if (new_src_referenced.get() != src_referenced.get()) {
-            src_type = cdk::reference_type::create(4, new_src_referenced);
-          }
-
-          if (new_dest_referenced.get() != dest_referenced.get()) {
-            dest_type = cdk::reference_type::create(4, new_dest_referenced);
-          }
-        } else if (src_referenced->name() != cdk::TYPE_VOID &&
-                   dest_referenced->name() != cdk::TYPE_VOID) {
-          if (!til::deep_type_cmp(src_referenced, dest_referenced)) {
-            throw std::string("cannot unify pointers to different types");
-          }
+        if (new_src_referenced.get() != src_referenced.get()) {
+          src_type = cdk::reference_type::create(4, new_src_referenced);
         }
 
-        return {src_type, dest_type};
+        if (new_dest_referenced.get() != dest_referenced.get()) {
+          dest_type = cdk::reference_type::create(4, new_dest_referenced);
+        }
+      } else if (src_referenced->name() != cdk::TYPE_VOID &&
+                 dest_referenced->name() != cdk::TYPE_VOID) {
+        if (!til::deep_type_cmp(src_referenced, dest_referenced)) {
+          throw std::string("cannot unify pointers to different types");
+        }
       }
-      break;
+
+      return {src_type, dest_type};
     }
+    break;
+  }
 
-    case cdk::TYPE_FUNCTIONAL: {
-      if (dest_type->name() == cdk::TYPE_FUNCTIONAL) {
-        auto src_func = cdk::functional_type::cast(src_type);
-        auto dest_func = cdk::functional_type::cast(dest_type);
+  case cdk::TYPE_FUNCTIONAL: {
+    if (dest_type->name() == cdk::TYPE_FUNCTIONAL) {
+      auto src_func = cdk::functional_type::cast(src_type);
+      auto dest_func = cdk::functional_type::cast(dest_type);
 
-        if (src_func->input_length() != dest_func->input_length()) {
-          throw std::string("cannot unify functions with different arguments");
-        }
-
-        std::vector<std::shared_ptr<cdk::basic_type>> src_inputs;
-        std::vector<std::shared_ptr<cdk::basic_type>> dest_inputs;
-        bool src_input_changed = false;
-        bool dest_input_changed = false;
-
-        for (std::size_t i = 0; i < src_func->input_length(); ++i) {
-          auto [new_dest, new_src] = unify_types(dest_func->input(i), src_func->input(i));
-          src_inputs.push_back(new_src);
-          dest_inputs.push_back(new_dest);
-          src_input_changed |= new_src.get() != src_func->input(i).get();
-          dest_input_changed |= new_dest.get() != dest_func->input(i).get();
-        }
-
-        auto [src_output, dest_output] = unify_types(src_func->output(0), dest_func->output(0));
-        if (src_output.get() != src_func->output(0).get() || src_input_changed) {
-          src_type = cdk::functional_type::create(src_inputs, src_output);
-        }
-        if (dest_output.get() != dest_func->output(0).get() || dest_input_changed) {
-          dest_type = cdk::functional_type::create(dest_inputs, dest_output);
-        }
-
-        return {src_type, dest_type};
+      if (src_func->input_length() != dest_func->input_length()) {
+        throw std::string("cannot unify functions with different arguments");
       }
-      break;
-    }
 
-    default:
-      break;
+      std::vector<std::shared_ptr<cdk::basic_type>> src_inputs;
+      std::vector<std::shared_ptr<cdk::basic_type>> dest_inputs;
+      bool src_input_changed = false;
+      bool dest_input_changed = false;
+
+      for (std::size_t i = 0; i < src_func->input_length(); ++i) {
+        auto [new_dest, new_src] =
+            unify_types(dest_func->input(i), src_func->input(i));
+        src_inputs.push_back(new_src);
+        dest_inputs.push_back(new_dest);
+        src_input_changed |= new_src.get() != src_func->input(i).get();
+        dest_input_changed |= new_dest.get() != dest_func->input(i).get();
+      }
+
+      auto [src_output, dest_output] =
+          unify_types(src_func->output(0), dest_func->output(0));
+      if (src_output.get() != src_func->output(0).get() || src_input_changed) {
+        src_type = cdk::functional_type::create(src_inputs, src_output);
+      }
+      if (dest_output.get() != dest_func->output(0).get() ||
+          dest_input_changed) {
+        dest_type = cdk::functional_type::create(dest_inputs, dest_output);
+      }
+
+      return {src_type, dest_type};
+    }
+    break;
+  }
+
+  default:
+    break;
   }
 
   if (src_type->name() == dest_type->name() &&
-      (dest_type->name() == cdk::TYPE_VOID || dest_type->name() == cdk::TYPE_INT ||
-       dest_type->name() == cdk::TYPE_DOUBLE || dest_type->name() == cdk::TYPE_STRING)) {
+      (dest_type->name() == cdk::TYPE_VOID ||
+       dest_type->name() == cdk::TYPE_INT ||
+       dest_type->name() == cdk::TYPE_DOUBLE ||
+       dest_type->name() == cdk::TYPE_STRING)) {
     return {src_type, dest_type};
   }
 
-  if (src_type->name() == cdk::TYPE_INT && dest_type->name() == cdk::TYPE_DOUBLE) {
+  if (src_type->name() == cdk::TYPE_INT &&
+      dest_type->name() == cdk::TYPE_DOUBLE) {
     return {src_type, dest_type};
   }
 
   if (dest_type->name() == cdk::TYPE_UNSPEC) {
     if (src_type->name() == cdk::TYPE_POINTER &&
-        cdk::reference_type::cast(src_type)->referenced()->name() == cdk::TYPE_VOID) {
+        cdk::reference_type::cast(src_type)->referenced()->name() ==
+            cdk::TYPE_VOID) {
       return {src_type, cdk::reference_type::create(4, dest_type)};
     }
 
@@ -187,52 +196,54 @@ unify_types(std::shared_ptr<cdk::basic_type> src_type,
                     til::to_string(dest_type) + "'");
 }
 
-static std::shared_ptr<cdk::basic_type> convert_unspecified_to_int(std::shared_ptr<cdk::basic_type> type) {
+static std::shared_ptr<cdk::basic_type>
+convert_unspecified_to_int(std::shared_ptr<cdk::basic_type> type) {
   switch (type->name()) {
-    case cdk::TYPE_UNSPEC:
-      return cdk::primitive_type::create(4, cdk::TYPE_INT);
+  case cdk::TYPE_UNSPEC:
+    return cdk::primitive_type::create(4, cdk::TYPE_INT);
 
-    case cdk::TYPE_POINTER: {
-      auto reference = std::dynamic_pointer_cast<cdk::reference_type>(type);
-      auto referenced = convert_unspecified_to_int(reference->referenced());
-      if (reference->referenced().get() != referenced.get()) {
-        return cdk::reference_type::create(4, referenced);
-      } else {
-        return type;
-      }
-    }
-
-    case cdk::TYPE_FUNCTIONAL: {
-      auto functional = std::dynamic_pointer_cast<cdk::functional_type>(type);
-
-      std::vector<std::shared_ptr<cdk::basic_type>> inputs;
-      bool input_changed = false;
-      for (auto &input : functional->input()->components()) {
-        auto new_input = convert_unspecified_to_int(input);
-        input_changed |= new_input.get() != input.get();
-        inputs.push_back(new_input);
-      }
-
-      auto output = convert_unspecified_to_int(functional->output(0));
-      if (output.get() != functional->output(0).get() || input_changed) {
-        return cdk::functional_type::create(inputs, output);
-      } else {
-        return type;
-      }
-    }
-
-    default:
+  case cdk::TYPE_POINTER: {
+    auto reference = std::dynamic_pointer_cast<cdk::reference_type>(type);
+    auto referenced = convert_unspecified_to_int(reference->referenced());
+    if (reference->referenced().get() != referenced.get()) {
+      return cdk::reference_type::create(4, referenced);
+    } else {
       return type;
+    }
+  }
+
+  case cdk::TYPE_FUNCTIONAL: {
+    auto functional = std::dynamic_pointer_cast<cdk::functional_type>(type);
+
+    std::vector<std::shared_ptr<cdk::basic_type>> inputs;
+    bool input_changed = false;
+    for (auto &input : functional->input()->components()) {
+      auto new_input = convert_unspecified_to_int(input);
+      input_changed |= new_input.get() != input.get();
+      inputs.push_back(new_input);
+    }
+
+    auto output = convert_unspecified_to_int(functional->output(0));
+    if (output.get() != functional->output(0).get() || input_changed) {
+      return cdk::functional_type::create(inputs, output);
+    } else {
+      return type;
+    }
+  }
+
+  default:
+    return type;
   }
 }
 
-
 std::shared_ptr<cdk::basic_type> til::type_checker::unify_node_with_type(
-    cdk::typed_node *const node, std::shared_ptr<cdk::basic_type> target_type, int level) {
+    cdk::typed_node *const node, std::shared_ptr<cdk::basic_type> target_type,
+    int level) {
   auto current_type = node->type();
 
   try {
-    auto [new_current_type, new_target_type] = unify_types(current_type, target_type);
+    auto [new_current_type, new_target_type] =
+        unify_types(current_type, target_type);
     if (new_current_type.get() != current_type.get()) {
       node->type(new_current_type);
       propagate(node, level + 2);
@@ -245,7 +256,8 @@ std::shared_ptr<cdk::basic_type> til::type_checker::unify_node_with_type(
   } catch (std::string &e) {
     node->type(current_type);
     e = "failed to unify '" + node->label() + "' from type '" +
-        til::to_string(current_type) + "' to '" + til::to_string(target_type) + "'\n" + e;
+        til::to_string(current_type) + "' to '" + til::to_string(target_type) +
+        "'\n" + e;
     throw e;
   }
 }
@@ -270,7 +282,8 @@ void til::type_checker::unify_nodes(cdk::typed_node *const from_node,
 }
 
 bool til::type_checker::test_unify_node_with_type(
-    cdk::typed_node *const node, std::shared_ptr<cdk::basic_type> target_type, int level) {
+    cdk::typed_node *const node, std::shared_ptr<cdk::basic_type> target_type,
+    int level) {
   _isTesting = true;
   try {
     unify_node_with_type(node, target_type, level);
@@ -282,11 +295,10 @@ bool til::type_checker::test_unify_node_with_type(
   }
 }
 
-
-void til::type_checker::convert_node_to_int(cdk::typed_node *const node, int level) {
+void til::type_checker::convert_node_to_int(cdk::typed_node *const node,
+                                            int level) {
   unify_node_with_type(node, convert_unspecified_to_int(node->type()), level);
 }
-
 
 void til::type_checker::propagate(cdk::typed_node *const node, int level) {
   if (_isPropagating) {
@@ -348,8 +360,8 @@ void til::type_checker::do_string_node(cdk::string_node *const node, int lvl) {
 void til::type_checker::do_nullptr_node(til::nullptr_node *const node,
                                         int lvl) {
   ASSERT_UNSPEC;
-  node->type(cdk::reference_type::create(4, 
-      cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
+  node->type(cdk::reference_type::create(
+      4, cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
 }
 
 //---------------------------------------------------------------------------
@@ -359,7 +371,7 @@ void til::type_checker::do_not_node(cdk::not_node *const node, int lvl) {
 
   node->argument()->accept(this, lvl + 2);
   unify_node_with_type(node->argument(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
   node->type(node->argument()->type());
 }
 
@@ -387,7 +399,9 @@ void til::type_checker::do_sizeof_node(til::sizeof_node *const node, int lvl) {
   ASSERT_UNSPEC;
 
   node->argument()->accept(this, lvl + 2);
-  unify_node_with_type(node->argument(), convert_unspecified_to_int(node->argument()->type()), lvl+2);
+  unify_node_with_type(node->argument(),
+                       convert_unspecified_to_int(node->argument()->type()),
+                       lvl + 2);
 
   node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 }
@@ -398,10 +412,10 @@ void til::type_checker::do_alloc_node(til::alloc_node *const node, int lvl) {
   node->argument()->accept(this, lvl + 2);
 
   unify_node_with_type(node->argument(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 
-  node->type(cdk::reference_type::create(4, 
-      cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
+  node->type(cdk::reference_type::create(
+      4, cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)));
 }
 
 //---------------------------------------------------------------------------
@@ -424,14 +438,14 @@ void til::type_checker::do_add_node(cdk::add_node *const node, int lvl) {
                 lvl + 2) &&
             test_unify_node_with_type(node->right(), node->type(), lvl + 2)) {
           unify_node_with_type(node->left(),
-                             cdk::primitive_type::create(4, cdk::TYPE_INT),
-                             lvl + 2);
+                               cdk::primitive_type::create(4, cdk::TYPE_INT),
+                               lvl + 2);
           unify_node_with_type(node->right(), node->type(), lvl + 2);
         } else {
           unify_node_with_type(node->left(), node->type(), lvl + 2);
           unify_node_with_type(node->right(),
-                             cdk::primitive_type::create(4, cdk::TYPE_INT),
-                             lvl + 2);
+                               cdk::primitive_type::create(4, cdk::TYPE_INT),
+                               lvl + 2);
         }
       }
     } else {
@@ -452,25 +466,25 @@ void til::type_checker::do_add_node(cdk::add_node *const node, int lvl) {
   // Given x + y = z
   if (node->left()->is_typed(cdk::TYPE_POINTER)) {
     // If x = P, then y <- I, z = P
-    unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->right(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
     node->type(node->left()->type()); // Results in a pointer.
   } else if (node->right()->is_typed(cdk::TYPE_POINTER)) {
     // Else if y = P, then x <- I, z = P
-    unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->left(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
     node->type(node->right()->type()); // Results in a pointer.
   } else if (node->left()->is_typed(cdk::TYPE_DOUBLE)) {
     // Else if, x = D, then y <- D, z = D
     unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
     node->type(node->left()->type()); // Results in a double.
   } else if (node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     // Else if, y = D, then x <- D, z = D
     unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
     node->type(node->right()->type()); // Results in a double.
   } else if (node->left()->is_typed(cdk::TYPE_INT) &&
              node->right()->is_typed(cdk::TYPE_INT)) {
@@ -502,19 +516,23 @@ void til::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
       // X - Y = P, X <- P, Y <- I
       unify_node_with_type(node->left(), node->type(), lvl + 2);
       unify_node_with_type(node->right(),
-                         cdk::primitive_type::create(4, cdk::TYPE_INT),
-                         lvl + 2);
+                           cdk::primitive_type::create(4, cdk::TYPE_INT),
+                           lvl + 2);
     } else if (node->is_typed(cdk::TYPE_INT)) {
       if (node->left()->is_typed(cdk::TYPE_POINTER)) {
         // P - U = I, U <- P
         unify_node_with_type(
             node->left(),
-            cdk::reference_type::create(4, 
-                cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
+            cdk::reference_type::create(
+                4, cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
             lvl + 2);
         unify_nodes(node->left(), node->right(), lvl + 2);
-        unify_node_with_type(node->left(), convert_unspecified_to_int(node->left()->type()), lvl+2);
-        unify_node_with_type(node->right(), convert_unspecified_to_int(node->right()->type()), lvl+2);
+        unify_node_with_type(node->left(),
+                             convert_unspecified_to_int(node->left()->type()),
+                             lvl + 2);
+        unify_node_with_type(node->right(),
+                             convert_unspecified_to_int(node->right()->type()),
+                             lvl + 2);
       } else {
         // U - U = I, U <- I
         unify_node_with_type(node->left(), node->type(), lvl + 2);
@@ -537,14 +555,14 @@ void til::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
   if (node->left()->is_typed(cdk::TYPE_DOUBLE)) {
     // If x = D, then y <- D, z = D
     unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
     node->type(node->left()->type()); // Results in a double.
   } else if (node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     // Else if y = D, then x <- D, z = D
     unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
     node->type(node->right()->type()); // Results in a double.
   } else if (node->left()->is_typed(cdk::TYPE_UNSPEC) &&
              node->right()->is_typed(cdk::TYPE_POINTER)) {
@@ -560,8 +578,8 @@ void til::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
         cdk::TYPE_UNSPEC)); // Remains unspecified - leave decision to parent.
   } else if (node->left()->is_typed(cdk::TYPE_INT)) {
     // Else if x = I, then y <- I, z = I
-    unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->right(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
     node->type(node->left()->type()); // Results in an int.
   } else if (node->left()->is_typed(cdk::TYPE_POINTER) &&
              node->right()->is_typed(cdk::TYPE_INT)) {
@@ -596,28 +614,26 @@ void til::type_checker::processMulExpression(
 
   if (node->left()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
-    node->type(cdk::primitive_type::create(
-        8, cdk::TYPE_DOUBLE));
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
+    node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
   } else if (node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
-    node->type(cdk::primitive_type::create(
-        8, cdk::TYPE_DOUBLE));
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
+    node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
   } else if (node->left()->is_typed(cdk::TYPE_UNSPEC) ||
              node->right()->is_typed(cdk::TYPE_UNSPEC)) {
     node->type(cdk::primitive_type::create(
         0,
-        cdk::TYPE_UNSPEC)); // Keeps the type unspecified. Should be resolved by parent
+        cdk::TYPE_UNSPEC)); // Keeps the type unspecified. Should be resolved by
+                            // parent
   } else {
-    unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
-    unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
-    node->type(
-        cdk::primitive_type::create(4, cdk::TYPE_INT));
+    unify_node_with_type(
+        node->left(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->right(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
   }
 }
 
@@ -633,13 +649,12 @@ void til::type_checker::do_mod_node(cdk::mod_node *const node, int lvl) {
 
   node->left()->accept(this, lvl + 2);
   node->right()->accept(this, lvl + 2);
-  node->type(cdk::primitive_type::create(
-      4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 
   unify_node_with_type(node->left(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
   unify_node_with_type(node->right(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }
 
 void til::type_checker::processCmpExpression(
@@ -648,22 +663,21 @@ void til::type_checker::processCmpExpression(
 
   node->left()->accept(this, lvl + 2);
   node->right()->accept(this, lvl + 2);
-  node->type(cdk::primitive_type::create(
-      4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 
   if (node->left()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
   } else if (node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
   } else {
-    unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
-    unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->left(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->right(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
   }
 }
 
@@ -686,27 +700,26 @@ void til::type_checker::processEqExpression(
 
   node->left()->accept(this, lvl + 2);
   node->right()->accept(this, lvl + 2);
-  node->type(cdk::primitive_type::create(
-      4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 
   if (node->left()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
   } else if (node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
-                       lvl + 2);
+                         cdk::primitive_type::create(8, cdk::TYPE_DOUBLE),
+                         lvl + 2);
   } else if (node->left()->is_typed(cdk::TYPE_POINTER) ||
              node->right()->is_typed(cdk::TYPE_POINTER)) {
     unify_nodes(node->left(), node->right(), lvl + 2);
     convert_node_to_int(node->left(), lvl + 2);
     convert_node_to_int(node->right(), lvl + 2);
   } else {
-    unify_node_with_type(node->left(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
-    unify_node_with_type(node->right(),
-                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->left(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+    unify_node_with_type(
+        node->right(), cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
   }
 }
 
@@ -723,13 +736,12 @@ void til::type_checker::processLogicalExpression(
 
   node->left()->accept(this, lvl + 2);
   node->right()->accept(this, lvl + 2);
-  node->type(cdk::primitive_type::create(
-      4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 
   unify_node_with_type(node->left(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
   unify_node_with_type(node->right(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }
 
 void til::type_checker::do_and_node(cdk::and_node *const node, int lvl) {
@@ -853,7 +865,7 @@ void til::type_checker::do_index_node(til::index_node *const node, int lvl) {
   if (_isPropagating) {
     // The base node must be a pointer to this node.
     unify_node_with_type(node->base(),
-                       cdk::reference_type::create(4, node->type()), lvl + 2);
+                         cdk::reference_type::create(4, node->type()), lvl + 2);
     return;
   }
 
@@ -864,18 +876,18 @@ void til::type_checker::do_index_node(til::index_node *const node, int lvl) {
 
   // Base must be a pointer to something, so we unify it with a pointer to
   // unspec.
-  auto newType =
-      unify_node_with_type(node->base(),
-                         cdk::reference_type::create(4, 
-                             cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
-                         lvl + 2);
+  auto newType = unify_node_with_type(
+      node->base(),
+      cdk::reference_type::create(
+          4, cdk::primitive_type::create(0, cdk::TYPE_UNSPEC)),
+      lvl + 2);
 
   // The type is what the referenced unspec was unified to.
   node->type(cdk::reference_type::cast(newType)->referenced());
 
   // The index must unify to an integer.
-  unify_node_with_type(node->ind(), cdk::primitive_type::create(4, cdk::TYPE_INT),
-                     lvl + 2);
+  unify_node_with_type(node->ind(),
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }
 
 void til::type_checker::do_address_of_node(til::address_of_node *const node,
@@ -883,8 +895,8 @@ void til::type_checker::do_address_of_node(til::address_of_node *const node,
   if (_isPropagating) {
     // The lvalue node must be the referenced type of this node.
     unify_node_with_type(node->lvalue(),
-                       cdk::reference_type::cast(node->type())->referenced(),
-                       lvl + 2);
+                         cdk::reference_type::cast(node->type())->referenced(),
+                         lvl + 2);
     return;
   }
 
@@ -914,7 +926,7 @@ void til::type_checker::do_print_node(til::print_node *const node, int lvl) {
     // We only unify to int if the type is still unspecified.
     if (typed->is_typed(cdk::TYPE_UNSPEC)) {
       unify_node_with_type(typed, cdk::primitive_type::create(4, cdk::TYPE_INT),
-                         lvl + 2);
+                           lvl + 2);
     } else if (!typed->is_typed(cdk::TYPE_INT) &&
                !typed->is_typed(cdk::TYPE_DOUBLE) &&
                !typed->is_typed(cdk::TYPE_STRING) &&
@@ -1048,7 +1060,7 @@ void til::type_checker::do_loop_node(til::loop_node *const node, int lvl) {
   node->condition()->accept(this, lvl + 2);
   node->block()->accept(this, lvl + 2);
   unify_node_with_type(node->condition(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }
 
 void til::type_checker::do_stop_node(til::stop_node *const node, int lvl) {
@@ -1065,7 +1077,7 @@ void til::type_checker::do_if_node(til::if_node *const node, int lvl) {
   node->condition()->accept(this, lvl + 2);
   node->block()->accept(this, lvl + 2);
   unify_node_with_type(node->condition(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }
 
 void til::type_checker::do_if_else_node(til::if_else_node *const node,
@@ -1074,5 +1086,5 @@ void til::type_checker::do_if_else_node(til::if_else_node *const node,
   node->thenblock()->accept(this, lvl + 2);
   node->elseblock()->accept(this, lvl + 2);
   unify_node_with_type(node->condition(),
-                     cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
+                       cdk::primitive_type::create(4, cdk::TYPE_INT), lvl + 2);
 }

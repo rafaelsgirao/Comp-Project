@@ -628,9 +628,10 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
 
   _functionType = nullptr;
 
-  if (!_functionQueue.empty())
-  {
-    auto [lbl, function] = _functionQueue.front(); //! wtf, não sabia que o C++ tinha destructuring assim
+  if (!_functionQueue.empty()) {
+    auto [lbl, function] =
+        _functionQueue
+            .front(); //! wtf, não sabia que o C++ tinha destructuring assim
     function->accept(this, lvl);
   }
 

@@ -5,21 +5,21 @@
 
 namespace til {
 
-  /**
-   * Class for describing if-then nodes.
-   */
-  class nullptr_node : public cdk::expression_node {
+/**
+ * Class for describing if-then nodes.
+ */
+class nullptr_node : public cdk::expression_node {
 
-  public:
-    nullptr_node(int lineno) :
-        cdk::expression_node(lineno) {
-          //Empty
-    }
+public:
+  nullptr_node(int lineno) : cdk::expression_node(lineno) {
+    // Empty
+  }
 
-    void accept(basic_ast_visitor *sp, int level) { sp->do_nullptr_node(this, level); }
+  void accept(basic_ast_visitor *sp, int level) {
+    sp->do_nullptr_node(this, level);
+  }
+};
 
-  };
-
-} // til
+} // namespace til
 
 #endif

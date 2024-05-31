@@ -16,8 +16,8 @@ class offset_checker : public basic_ast_visitor {
 
 public:
   offset_checker(std::shared_ptr<cdk::compiler> compiler,
-                        cdk::symbol_table<til::symbol> &symtab,
-                        std::shared_ptr<cdk::functional_type> functionType)
+                 cdk::symbol_table<til::symbol> &symtab,
+                 std::shared_ptr<cdk::functional_type> functionType)
       : basic_ast_visitor(compiler), _symtab(symtab),
         _functionType(functionType), _size(0) {}
 
