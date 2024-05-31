@@ -1,5 +1,5 @@
-#ifndef __SIMPLE_FACTORY_H__
-#define __SIMPLE_FACTORY_H__
+#ifndef __TIL_FACTORY_H__
+#define __TIL_FACTORY_H__
 
 #include "til_scanner.h"
 #include <cdk/yy_factory.h>
@@ -8,7 +8,7 @@
 namespace til {
 
 /**
- * This class implements the compiler factory for the Simple compiler.
+ * This class implements the compiler factory for the TIL compiler.
  */
 class factory : public cdk::yy_factory<til_scanner> {
   /**
