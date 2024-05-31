@@ -14,21 +14,35 @@
 
 namespace til {
 
+class whileConds {
+  public:
+    int next;
+    int stop;
+    whileConds(int next, int stop) : next(next), stop(stop) {}
+};
+
+class functionQueue {
+  public:
+    int label;
+    til::function_node *node;
+    functionQueue(int next, til::function_node *node) : label(next), node(node) {}
+};
+
 //!
 //! Traverse syntax tree and generate the corresponding assembly code.
 //!
 class postfix_writer : public basic_ast_visitor {
   cdk::symbol_table<til::symbol> &_symtab;
-  std::queue<std::pair<int, til::function_node *>> _deferredFunctions;
+  std::unordered_set<std::string> _externSymbols;
   std::optional<std::string>
       _externalFunctionName; // name of external function to be called, if any
+  std::queue<functionQueue> _functionQueue;
   std::set<std::string>
       _externalFunctionsToDeclare; // set of external functions to declare
-  std::vector<std::pair<int, int>> _loopLabels; // (next, stop)
+  std::vector<whileConds> _whileConds; // (next, stop)
   std::shared_ptr<cdk::functional_type> _functionType;
-  int _function;
-  std::unordered_set<std::string> _externSymbols;
   cdk::basic_postfix_emitter &_pf;
+  int _function;
   int _lbl;
   long _offset;
 

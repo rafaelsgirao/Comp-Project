@@ -383,25 +383,25 @@ void til::postfix_writer::do_return_node(til::return_node *const node,
 }
 
 void til::postfix_writer::do_stop_node(til::stop_node *const node, int lvl) {
-  if (static_cast<std::size_t>(node->nth_cycle()) > _loopLabels.size() ||
+  if (static_cast<std::size_t>(node->nth_cycle()) > _whileConds.size() ||
       node->nth_cycle() < 1) {
     std::cerr << (node)->lineno()
               << ": invalid nesting level for stop instruction" << std::endl;
     return;
   }
 
-  auto lbl = _loopLabels[_loopLabels.size() - node->nth_cycle()].second;
+  auto lbl = _whileConds[_whileConds.size() - node->nth_cycle()].stop;
   _pf.JMP(mklbl(lbl));
 }
 
 void til::postfix_writer::do_next_node(til::next_node *const node, int lvl) {
-  if (static_cast<std::size_t>(node->nth_cycle()) > _loopLabels.size() ||
+  if (static_cast<std::size_t>(node->nth_cycle()) > _whileConds.size() ||
       node->nth_cycle() < 1) {
     std::cerr << (node)->lineno()
               << ": invalid nesting level for next instruction" << std::endl;
   }
 
-  auto lbl = _loopLabels[_loopLabels.size() - node->nth_cycle()].first;
+  auto lbl = _whileConds[_whileConds.size() - node->nth_cycle()].next;
   _pf.JMP(mklbl(lbl));
 }
 
@@ -547,16 +547,16 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
   int lbl = 0;
 
   if (_functionType != nullptr) {
-    // Nested function! Defer its definition to the end of the parent function.
+
     _pf.ADDR(mklbl(lbl = ++_lbl));
-    _deferredFunctions.push({lbl, node});
+    _functionQueue.push(functionQueue(lbl, node));
     return;
   }
 
-  if (!_deferredFunctions.empty()) {
+  if (!_functionQueue.empty()) {
     // We are defining a previously deferred function - get its label.
-    lbl = _deferredFunctions.front().first;
-    _deferredFunctions.pop();
+    lbl = _functionQueue.front().label;
+    _functionQueue.pop();
   } else {
     // This is a function expression on a global variable.
     _pf.SADDR(mklbl(lbl = ++_lbl));
@@ -595,9 +595,8 @@ void til::postfix_writer::do_function_node(til::function_node *const node,
 
   _functionType = nullptr;
 
-  if (!_deferredFunctions.empty()) {
-    // We have deferred functions! Let's define them now.
-    auto [lbl, function] = _deferredFunctions.front();
+  if (!_functionQueue.empty()) {
+    auto [lbl, function] = _functionQueue.front(); //* Destrucuring mágico :O
     function->accept(this, lvl);
   }
 }
@@ -629,10 +628,9 @@ void til::postfix_writer::do_program_node(til::program_node *const node,
 
   _functionType = nullptr;
 
-  if (!_deferredFunctions.empty())
+  if (!_functionQueue.empty())
   {
-    // We have deferred functions! Let's define them now.
-    auto [lbl, function] = _deferredFunctions.front();
+    auto [lbl, function] = _functionQueue.front(); //! wtf, não sabia que o C++ tinha destructuring assim
     function->accept(this, lvl);
   }
 
@@ -701,9 +699,9 @@ void til::postfix_writer::do_loop_node(til::loop_node *const node, int lvl) {
   _pf.LABEL(mklbl(lbl1 = ++_lbl));
   node->condition()->accept(this, lvl);
   _pf.JZ(mklbl(lbl2 = ++_lbl));
-  _loopLabels.push_back({lbl1, lbl2});
+  _whileConds.push_back(whileConds(lbl1, lbl2));
   node->block()->accept(this, lvl + 2);
-  _loopLabels.pop_back();
+  _whileConds.pop_back();
   _pf.JMP(mklbl(lbl1));
   _pf.LABEL(mklbl(lbl2));
 }
