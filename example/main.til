@@ -1,0 +1,21 @@
+; builtin functions from the RTS (non-TIL)
+(external (int) argc)
+(external (string (int)) argv)
+(external (int (string)) atoi)
+
+; user functions from other modules (TIL)
+(forward (int (int)) factorial)
+
+; the main function
+(program
+  (var value 1)
+  (println "Teste para a função factorial.")
+  (if (== (argc) 2)
+    (block
+      (var s (argv 1))
+      (set value (atoi s))
+    )
+  )
+  (println value "! é " (factorial value))
+  (return 0)
+)

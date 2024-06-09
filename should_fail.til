@@ -1,0 +1,6 @@
+(program
+  double 3e4
+  (println "\000" f) ; should fail
+  (return 0)
+)
+

@@ -1,0 +1,5 @@
+(program
+  (println (sizeof "olá"))
+  (return 0)
+)
+

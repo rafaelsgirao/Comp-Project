@@ -1,8 +1,5 @@
-flake.nix
-flake.lock
 .direnv
 .pre-commit-config.yaml
-.envrc
 .nix-init
 docs
 .vscode/
@@ -14,15 +11,12 @@ til_parser.tab.h
 til_scanner.cpp
 .editorconfig
 *.asm
-*.til
 *.xml
 src
-do_tests.sh
 
 co24
 co24/
 co24/*
-auto-tests
 
 # Created by https://www.toptal.com/developers/gitignore/api/java,linux,macos,direnv,windows,visualstudiocode,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,linux,macos,direnv,windows,visualstudiocode,c++
@@ -58,12 +52,10 @@ auto-tests
 
 # Executables
 *.exe
-*.out
 *.app
 
 ### direnv ###
 .direnv
-.envrc
 
 ### Java ###
 # Compiled class file
